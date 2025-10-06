@@ -1,6 +1,5 @@
 "use client"
 
-import Demo from "@/components/Demo"
 import FAQ from "@/components/FAQ"
 import FinalCTA from "@/components/FinalCTA"
 import Footer from "@/components/Footer"
@@ -9,6 +8,7 @@ import HowToUse from "@/components/HowToUse"
 import Niches from "@/components/Niches"
 import Testimonials from "@/components/Testimonials"
 import WhyChoose from "@/components/WhyChoose"
+import Stickers from "./components/Stickers"
 
 
 export default function Home() {
@@ -23,7 +23,7 @@ export default function Home() {
     <div className="min-h-screen bg-black text-white">
       <Hero onCtaClick={scrollToOffer} />
       <WhyChoose />
-      <Demo />
+      <Stickers />
       <HowToUse />
       <Testimonials />
       <Niches />
