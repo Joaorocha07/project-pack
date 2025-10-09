@@ -26,7 +26,7 @@ export default function HowToUse() {
               <Users className="h-10 w-10 text-white" />
             </div>
             <h3 className="text-xl font-bold mb-4 text-[#f943a7]">2. Área de membros</h3>
-            <p className="text-gray-400">Você recebe acesso à uma área onde as figurinhas estão separadas por nichos no Drive ou Telegram</p>
+            <p className="text-gray-400">Você recebe acesso à uma área onde as figurinhas estão separadas por nichos pelo e-mail</p>
           </div>
           
           <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-[#9a50e2]/10 to-transparent border border-[#9a50e2]/20 hover:border-[#9a50e2]/50 transition-all duration-300">

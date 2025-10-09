@@ -16,7 +16,7 @@ export default function FAQ() {
     },
     {
       question: "Como vou receber meu produto?",
-      answer: "Será enviado o acesso para o seu e-mail do nosso canal do telegram"
+      answer: "Será enviado o acesso para o seu e-mail"
     },
     {
       question: "Tem suporte?",
