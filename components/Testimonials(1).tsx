@@ -32,7 +32,7 @@ export default function Testimonials() {
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             O que falam sobre
-            <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent"> nosso pack</span>
+            <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent"> Pack do Criador</span>
           </h2>
         </div>
         

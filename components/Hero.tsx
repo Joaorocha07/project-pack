@@ -22,7 +22,7 @@ export default function Hero({ onCtaClick }: HeroProps) {
             Stories criativos
           </span>
           <br />
-          <span className="text-white">com nossos pack</span>
+          <span className="text-white">com pack do criador</span>
         </h1>
         
         <p className="text-xl md:text-2xl text-gray-300 mb-8 font-light">

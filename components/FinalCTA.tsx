@@ -3,7 +3,7 @@ import { Clock, Check, ShoppingCart } from 'lucide-react'
 
 export default function FinalCTA() {
   return (
-    <section id="offer" className="py-20 px-6 bg-gradient-to-b from-black via-gray-900/50 to-black">
+    <section id="offer" className="py-16 px-6 bg-gradient-to-b from-black via-gray-900/50 to-black">
       <div className="max-w-4xl mx-auto text-center">
         <div className="mb-8 inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-full border border-red-500/30 backdrop-blur-sm animate-pulse">
           <Clock className="text-red-400 mr-2 h-5 w-5" />
@@ -50,11 +50,15 @@ export default function FinalCTA() {
             <p className="text-sm text-gray-400 mt-2">*PAGAMENTO ÚNICO</p>
           </div>
           
-          <button className="group relative inline-flex items-center px-16 py-6 text-2xl font-bold text-black bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-[#ffd833]/50">
-            <ShoppingCart className="mr-3 h-8 w-8 group-hover:animate-pulse" />
-            COMPRAR AGORA
-            <div className="absolute -inset-1 bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-          </button>
+          <div className="relative inline-flex w-full sm:w-auto">
+            <button
+              className="group relative inline-flex w-full sm:w-auto items-center justify-center px-6 sm:px-10 md:px-16 py-4 sm:py-5 md:py-6 text-lg sm:text-xl md:text-2xl font-bold text-black bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full transition-all duration-300 shadow-2xl hover:scale-[1.03] hover:shadow-[#ffd833]/50 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ffd833]/40"
+            >
+              <ShoppingCart className="mr-2.5 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 flex-shrink-0 group-hover:motion-safe:animate-pulse" />
+              <span>COMPRAR AGORA</span>
+              <div className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity" />
+            </button>
+          </div>
         </div>
       </div>
     </section>

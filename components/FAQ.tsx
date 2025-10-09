@@ -10,11 +10,11 @@ export default function FAQ() {
     },
     {
       question: "Por quanto tempo terei acesso?",
-      answer: "Acesso é por um ano, mas você pode adicionar +9,90 e ter acesso vitalício do pack"
+      answer: "O acesso é vitalício! Ao adquirir o pack, você garante acesso permanente, sem limite de tempo."
     },
     {
       question: "Como vou receber meu produto?",
-      answer: "Será enviado o acesso para o seu e-mail do nosso canal do telegram"
+      answer: "Será enviado o acesso para o seu e-mail logo após a confirmação do pagamento."
     },
     {
       question: "Tem suporte?",

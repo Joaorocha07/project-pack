@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Criativa Pack - 8000 Figurinhas para Instagram Stories',
+  title: 'Pack do Criador - 8000 Figurinhas para Instagram Stories',
   description: 'Transforme seus Stories do Instagram com mais de 8000 figurinhas profissionais. Stories criativos e extraordinários em poucos cliques.',
 }
 

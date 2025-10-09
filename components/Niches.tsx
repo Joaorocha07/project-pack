@@ -3,9 +3,9 @@ import React from 'react'
 export default function Niches() {
   const niches = [
     "Ano novo", "Agronomia", "Artesanato", "Balão", "Bom dia", "Boa tarde/Boa noite",
-    "Bronzeamento", "Blogueira/Influencer", "Café", "Caixinha de Pergunta", "Caixinha de vidro",
+    "Bronzeamento", "Blogueira", "Café", "Caixinha de Pergunta", "Caixinha de vidro",
     "Chá da tarde", "Clientes", "Confeitaria", "Cristã", "Depilação", "Dias da semana",
-    "Dieta", "Diversas", "Dona de Casa", "Efeito transparente/Gold", "Elementos", "Estética",
+    "Dieta", "Diversas", "Dona de Casa", "Efeito transparente", "Elementos", "Estética",
     "Familía", "Férias", "Fitness", "Frases universais", "Loja", "Maquiagem", "Maquina Ton",
     "Marketing Digital", "Meses", "Moldura", "Nail Designer (Unhas)", "Natal", "Neon",
     "Nutrição", "Emojis", "Rede Social", "Sobrancelha", "Lash Desgner (cílios)",
