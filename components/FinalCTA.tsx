@@ -41,23 +41,26 @@ export default function FinalCTA() {
           </div>
           
           <div className="mb-8">
-            <p className="text-gray-400 text-lg mb-2">VALOR TOTAL: <span className="line-through">R$ 97,00</span></p>
+            <p className="text-gray-400 text-lg mb-2">VALOR TOTAL: <span className="line-through">R$ 57,00</span></p>
             <p className="text-2xl font-bold mb-4">MAS SÓ HOJE POR APENAS</p>
             <div className="text-6xl font-bold bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent mb-4">
-              R$ 15,00
+              R$ 23,90
             </div>
-            <p className="text-xl text-gray-300">ou 2x de <span className="text-[#ffd833] font-bold">R$ 7,84</span></p>
+            <p className="text-xl text-gray-300">ou 2x de <span className="text-[#ffd833] font-bold">R$ 13,37</span></p>
             <p className="text-sm text-gray-400 mt-2">*PAGAMENTO ÚNICO</p>
           </div>
           
           <div className="relative inline-flex w-full sm:w-auto">
-            <button
+            <a
+              href="https://pay.cakto.com.br/wjzbfzc_596335"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group relative inline-flex w-full sm:w-auto items-center justify-center px-6 sm:px-10 md:px-16 py-4 sm:py-5 md:py-6 text-lg sm:text-xl md:text-2xl font-bold text-black bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full transition-all duration-300 shadow-2xl hover:scale-[1.03] hover:shadow-[#ffd833]/50 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ffd833]/40"
             >
               <ShoppingCart className="mr-2.5 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 flex-shrink-0 group-hover:motion-safe:animate-pulse" />
               <span>COMPRAR AGORA</span>
               <div className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity" />
-            </button>
+            </a>
           </div>
         </div>
       </div>
