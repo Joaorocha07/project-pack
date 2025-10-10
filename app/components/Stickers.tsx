@@ -4,11 +4,11 @@ import Image from 'next/image'
 import Autoplay from 'embla-carousel-autoplay'
 import useEmblaCarousel from 'embla-carousel-react'
 
-import avaliacao01 from '../../images/figurinha01.png'
-import avaliacao02 from '../../images/figurinha02.png'
-import avaliacao03 from '../../images/figurinha05.png'
-import avaliacao04 from '../../images/figurinha03.png'
-import avaliacao05 from '../../images/figurinha05.png'
+import avaliacao01 from '../../images/figurinha01.webp'
+import avaliacao02 from '../../images/figurinha02.webp'
+import avaliacao03 from '../../images/figurinha05.webp'
+import avaliacao04 from '../../images/figurinha03.webp'
+import avaliacao05 from '../../images/figurinha05.webp'
 
 export default function Stickers() {
   const [emblaRef, emblaApi] = useEmblaCarousel(
