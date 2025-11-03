@@ -11,10 +11,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
+      <head>
+        <CustomHead />
+      </head>
       <body className={inter.className}>
-        <head>
-          <CustomHead />
-        </head>
         {children}
       </body>
     </html>
