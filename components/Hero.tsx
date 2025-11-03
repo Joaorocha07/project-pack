@@ -2,6 +2,7 @@ import React from 'react'
 import { Star, Check, ShoppingCart, Smartphone, Clock } from 'lucide-react'
 
 import ImagePrincipal from '../images/android-chrome-512x512.png'
+import ImageTeste from '../images/banner-site-pc.png'
 import Image from 'next/image'
 
 interface HeroProps {
@@ -33,17 +34,13 @@ export default function Hero({ onCtaClick }: HeroProps) {
         </p>
         
         <div className="mb-8 mx-auto max-w-3xl">
-          <div className="aspect-video bg-gradient-to-r from-[#9a50e2]/20 to-[#f943a7]/20 rounded-2xl border border-white/10 backdrop-blur-sm flex items-center justify-center">
-            <div className="text-center">
-              <Image
-                src={ImagePrincipal}
-                alt="Imagem ilustrativa"
-                width={300}
-                height={300}
-                className="rounded-xl object-contain mx-auto"
-              />
-            </div>
-          </div>
+          <Image
+            src={ImageTeste}
+            alt="Imagem ilustrativa 1"
+            width={700}
+            height={300}
+            className="rounded-xl object-contain mx-auto"
+          />
         </div>
         
         <button 
