@@ -11,7 +11,7 @@ import avaliacao04 from '../../images/figurinha03.webp'
 import avaliacao05 from '../../images/figurinha05.webp'
 
 export default function Stickers() {
-  const [emblaRef, emblaApi] = useEmblaCarousel(
+  const [emblaRef] = useEmblaCarousel(
     { 
       loop: false,
       align: 'center',
@@ -24,47 +24,48 @@ export default function Stickers() {
     [Autoplay({ delay: 3000, stopOnInteraction: false })]
   )
 
-
   const testimonials = [
-    {
-      id: 1,
-      title: 'Cliente 1',
-      image: avaliacao01,
-    },
-    {
-      id: 2,
-      title: 'Cliente 2',
-      image: avaliacao02,
-    },
-    {
-      id: 3,
-      title: 'Cliente 3',
-      image: avaliacao03,
-    },
-    {
-      id: 4,
-      title: 'Cliente 4',
-      image: avaliacao04,
-    },
-    {
-      id: 5,
-      title: 'Cliente 5',
-      image: avaliacao05,
-    }
+    { id: 1, title: 'Cliente 1', image: avaliacao01 },
+    { id: 2, title: 'Cliente 2', image: avaliacao02 },
+    { id: 3, title: 'Cliente 3', image: avaliacao03 },
+    { id: 4, title: 'Cliente 4', image: avaliacao04 },
+    { id: 5, title: 'Cliente 5', image: avaliacao05 },
   ]
-  return (
-    <section id="depoimentos" className="py-20 px-6 bg-gradient-to-b from-black to-gray-900/50">
-      {/* Background decoration */}
-      <div className="absolute top-10 left-10 w-64 h-64 bg-[#ffa800]/5 rounded-full blur-3xl"></div>
 
-      <div className="text-center mb-16">
+  return (
+    <section id="depoimentos" className="relative py-28 px-6 overflow-hidden bg-[#05000a] text-white">
+      {/* 🌌 Fundo igual ao WhyChoose */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1c002f] via-[#0a0015] to-[#11001f] animate-gradientMove" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_25%,rgba(255,73,167,0.25),transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_75%,rgba(255,216,51,0.2),transparent_70%)]" />
+
+      {/* ✨ Partículas flutuantes suaves */}
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 15 }).map((_, i) => (
+          <span
+            key={i}
+            className="absolute block w-2 h-2 rounded-full bg-gradient-to-r from-[#ffd833] to-[#f943a7] opacity-30 animate-float"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${5 + Math.random() * 5}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Conteúdo principal */}
+      <div className="relative z-10 text-center mb-16">
         <h2 className="text-4xl md:text-5xl font-bold mb-4">
-        Veja como ficam nossas
-        <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent"> figurinhas nos stories</span>
+          Veja como ficam nossas{' '}
+          <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent">
+            figurinhas nos stories
+          </span>
         </h2>
       </div>
       
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Carousel Container */}
         <div className="relative max-w-7xl mx-auto mb-12">
           {/* Embla Carousel */}
