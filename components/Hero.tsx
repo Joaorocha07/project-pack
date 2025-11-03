@@ -1,6 +1,7 @@
 import React from 'react'
 import { Star, Check, ShoppingCart, Clock } from 'lucide-react'
 import ImageTeste from '../images/banner-site-pc.png'
+import ImageMobile from '../images/story-mobile.png'
 import Image from 'next/image'
 
 interface HeroProps {
@@ -46,12 +47,23 @@ export default function Hero({ onCtaClick }: HeroProps) {
         {/* Imagem central */}
         <div className="relative mb-8 mx-auto max-w-3xl">
           <div className="absolute -inset-4 bg-gradient-to-r from-[#ffd833]/20 to-[#f943a7]/20 blur-2xl rounded-3xl animate-pulse-slow" />
+          
+          {/* Imagem desktop */}
           <Image
             src={ImageTeste}
-            alt="Imagem ilustrativa 1"
+            alt="Imagem ilustrativa desktop"
             width={700}
             height={300}
-            className="relative rounded-xl object-contain mx-auto shadow-[0_0_40px_rgba(249,67,167,0.25)]"
+            className="relative rounded-xl object-contain mx-auto shadow-[0_0_40px_rgba(249,67,167,0.25)] hidden md:block"
+          />
+
+          {/* Imagem mobile */}
+          <Image
+            src={ImageMobile}
+            alt="Imagem ilustrativa mobile"
+            width={400}
+            height={400}
+            className="relative rounded-xl object-contain mx-auto shadow-[0_0_40px_rgba(249,67,167,0.25)] block md:hidden"
           />
         </div>
 
