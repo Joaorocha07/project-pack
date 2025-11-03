@@ -12,7 +12,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <CustomHead />
+        <head>
+          <CustomHead />
+        </head>
         {children}
       </body>
     </html>
