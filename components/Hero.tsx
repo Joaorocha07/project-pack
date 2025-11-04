@@ -32,12 +32,14 @@ export default function Hero({ onCtaClick }: HeroProps) {
         </div>
 
         {/* Título */}
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+        <h1 className="text-4xl md:text-7xl font-bold mb-6 leading-tight text-center">
           <span className="bg-gradient-to-r from-white via-[#f943a7] to-[#9a50e2] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(249,67,167,0.3)]">
             Stories criativos
           </span>
           <br />
-          <span className="text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]">com pack do criador</span>
+          <span className="text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.15)]">
+            com pack do criador
+          </span>
         </h1>
 
         <p className="text-xl md:text-2xl text-gray-300 mb-8 font-light">
