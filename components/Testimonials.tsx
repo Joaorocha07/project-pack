@@ -1,30 +1,35 @@
 'use client'
 
 import React from 'react'
+
+import ImageClienteUm from '@/images/foto-cliente-1.jpg'
+import ImageClienteDois from '@/images/foto-cliente-2.jpg'
+import ImageClienteTres from '@/images/foto-cliente-3.png'
+
 import { Heart, MessageCircle, Send } from 'lucide-react'
 
 export default function Testimonials() {
   const testimonials = [
     {
-      name: "Ana Silva",
-      username: "@anabela_insta",
+      name: "Ana Dellai",
+      username: "@anadellai_music",
       text: "Minhas vendas aumentaram 300% depois que comecei a usar essas figurinhas! Stories muito mais profissionais.",
       likes: 127,
-      avatar: "AS"
+      avatar: ImageClienteUm.src
     },
     {
-      name: "Carla Santos", 
-      username: "@carlasantos_",
+      name: "Ana Laura", 
+      username: "@lips.stargirl",
       text: "Que pack incrível! Economizo horas criando stories agora. Super recomendo para todas as empreendedoras!",
       likes: 89,
-      avatar: "CS"
+      avatar: ImageClienteDois.src
     },
     {
-      name: "Marina Costa",
-      username: "@marinacosta",
+      name: "Laryssa Rocha",
+      username: "@_laryznx1",
       text: "Estava procurando algo assim há muito tempo. Figurinhas de qualidade e muito fácil de usar. Amei! 💕",
       likes: 156,
-      avatar: "MC"
+      avatar: ImageClienteTres.src
     }
   ]
 
@@ -81,7 +86,11 @@ export default function Testimonials() {
               <div className="relative z-10">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full flex items-center justify-center text-black font-bold mr-3">
-                    {testimonial.avatar}
+                    <img
+                      src={testimonial.avatar}
+                      alt={testimonial.name}
+                      className="w-full h-full object-cover rounded-full"
+                    />
                   </div>
                   <div>
                     <h4 className="font-bold text-white">{testimonial.name}</h4>
