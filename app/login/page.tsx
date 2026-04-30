@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2, LockKeyhole, LogIn, Mail } from 'lucide-react';
 
-import { login, getStoredToken, getStoredUser, isAdminRole } from '@/lib/auth';
+import { getMe, isAdminRole, login } from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,19 +19,32 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const token = getStoredToken();
-    const user = getStoredUser();
+    let isMounted = true;
 
-    if (!token) {
-      return;
+    async function redirectAuthenticatedUser() {
+      try {
+        const user = await getMe();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (user.temporaryPassword) {
+          router.replace('/trocar-senha');
+          return;
+        }
+
+        router.replace(isAdminRole(user.role) ? '/admin' : '/acesso');
+      } catch {
+        // No active session; stay on the login page.
+      }
     }
 
-    if (user?.temporaryPassword) {
-      router.replace('/trocar-senha');
-      return;
-    }
+    redirectAuthenticatedUser();
 
-    router.replace(isAdminRole(user?.role) ? '/admin' : '/acesso');
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

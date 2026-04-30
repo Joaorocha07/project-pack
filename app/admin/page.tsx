@@ -65,8 +65,8 @@ export default function AdminPage() {
     };
   }, [router]);
 
-  function handleLogout() {
-    clearSession();
+  async function handleLogout() {
+    await clearSession();
     router.replace('/login');
   }
 

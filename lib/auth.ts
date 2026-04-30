@@ -1,5 +1,3 @@
-export const API_BASE_URL = 'https://pack-do-criador-back-end.onrender.com';
-
 export type User = {
   id: string;
   name: string;
@@ -10,7 +8,6 @@ export type User = {
 };
 
 type LoginResponse = {
-  token: string;
   user: User;
 };
 
@@ -32,9 +29,9 @@ export type SendAccessEmailResponse = {
   user: AdminUser;
 };
 
-const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 const REQUEST_TIMEOUT_MS = 45000;
+const API_BASE_URL = '/api';
 
 async function parseApiResponse(response: Response) {
   const text = await response.text();
@@ -91,7 +88,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 }
 
 export function getStoredToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  return null;
 }
 
 export function getStoredUser() {
@@ -109,8 +106,7 @@ export function getStoredUser() {
   }
 }
 
-export function saveSession(token: string, user: User) {
-  localStorage.setItem(TOKEN_KEY, token);
+export function saveSession(user: User) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
@@ -118,9 +114,20 @@ export function saveUser(user: User) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-export function clearSession() {
-  localStorage.removeItem(TOKEN_KEY);
+export async function clearSession() {
   localStorage.removeItem(USER_KEY);
+
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+  } catch {
+    // The local user state is already cleared; the server cookie will expire naturally if logout fails.
+  }
 }
 
 export function isAdminRole(role?: User['role']) {
@@ -128,27 +135,23 @@ export function isAdminRole(role?: User['role']) {
 }
 
 async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = 'Erro na requisicao') {
-  const token = getStoredToken();
   const headers = new Headers(options.headers);
 
   if (!headers.has('Content-Type') && options.body) {
     headers.set('Content-Type', 'application/json');
   }
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
   const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   const data = await parseApiResponse(response);
 
   if (!response.ok) {
     if (response.status === 401) {
-      clearSession();
+      localStorage.removeItem(USER_KEY);
     }
 
     throw new Error(getApiError(data, fallback));
@@ -163,6 +166,7 @@ export async function login(email: string, password: string) {
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify({ email, password }),
   });
 
@@ -174,11 +178,11 @@ export async function login(email: string, password: string) {
     throw new Error(getApiError(data, 'Nao foi possivel fazer login. Verifique seus dados e tente novamente.'));
   }
 
-  if (!data.token || !data.user) {
+  if (!data.user) {
     throw new Error('A resposta do login veio incompleta. Tente novamente.');
   }
 
-  saveSession(data.token, data.user);
+  saveSession(data.user);
 
   return data as LoginResponse;
 }

@@ -80,8 +80,8 @@ export default function AdminUsersPage() {
     };
   }, [loadUsers, router]);
 
-  function handleLogout() {
-    clearSession();
+  async function handleLogout() {
+    await clearSession();
     router.replace('/login');
   }
 
