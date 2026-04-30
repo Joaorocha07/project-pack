@@ -224,7 +224,10 @@ export async function listUsers() {
 
 export async function sendAccessEmail(user: Pick<AdminUser, 'id' | 'email'>) {
   const token = getStoredToken();
-  const body = user.id ? { usuario_id: user.id } : { email: user.email };
+  const body = {
+    email: user.email,
+    ...(user.id ? { usuario_id: user.id } : {}),
+  };
 
   const response = await fetchWithTimeout(`${API_BASE_URL}/admin/send-access-email`, {
     method: 'POST',
