@@ -6,7 +6,7 @@ import { Download, KeyRound, Loader2, LogOut, ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { clearSession, getMe, type User } from '@/lib/auth';
+import { clearSession, getMe, isAdminRole, type User } from '@/lib/auth';
 
 export default function AccessPage() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function AccessPage() {
           return;
         }
 
-        if (currentUser.role === 'ADMIN') {
+        if (isAdminRole(currentUser.role)) {
           router.replace('/admin');
           return;
         }

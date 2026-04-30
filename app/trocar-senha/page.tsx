@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { changePassword, getMe, getStoredUser } from '@/lib/auth';
+import { changePassword, getMe, getStoredUser, isAdminRole } from '@/lib/auth';
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -58,7 +58,7 @@ export default function ChangePasswordPage() {
       await changePassword(currentPassword, newPassword);
       setSuccess('Senha alterada com sucesso. Redirecionando para o produto...');
       const user = getStoredUser();
-      setTimeout(() => router.replace(user?.role === 'ADMIN' ? '/admin' : '/acesso'), 900);
+      setTimeout(() => router.replace(isAdminRole(user?.role) ? '/admin' : '/acesso'), 900);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao trocar senha. Tente novamente.');
     } finally {

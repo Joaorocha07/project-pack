@@ -4,7 +4,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'USER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'USER';
   hasAccess: boolean;
   temporaryPassword: boolean;
 };
@@ -27,8 +27,25 @@ export type ImportCaktoSummary = {
   emailsSent: number;
 };
 
+export type SendAccessEmailResponse = {
+  success: boolean;
+  type: string;
+  message: string;
+  data?: {
+    usuario?: {
+      id: string;
+      nome: string;
+      email: string;
+      perfil: string;
+      email_enviado: string;
+      enviado_em: string | null;
+    };
+  };
+};
+
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
+const REQUEST_TIMEOUT_MS = 45000;
 
 async function parseApiResponse(response: Response) {
   const text = await response.text();
@@ -64,6 +81,26 @@ function getApiError(data: unknown, fallback: string) {
   return fallback;
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('A requisicao demorou demais para responder. Tente novamente em instantes.');
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -97,6 +134,10 @@ export function clearSession() {
   localStorage.removeItem(USER_KEY);
 }
 
+export function isAdminRole(role?: User['role']) {
+  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = 'Erro na requisicao') {
   const token = getStoredToken();
   const headers = new Headers(options.headers);
@@ -109,7 +150,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
@@ -128,7 +169,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
 }
 
 export async function login(email: string, password: string) {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -181,11 +222,34 @@ export async function listUsers() {
   return apiFetch<{ ok: boolean; users: AdminUser[] }>('/admin/users', {}, 'Nao foi possivel listar usuarios.');
 }
 
-export async function sendAccessEmail(email: string) {
-  return apiFetch('/admin/send-access-email', {
+export async function sendAccessEmail(user: Pick<AdminUser, 'id' | 'email'>) {
+  const token = getStoredToken();
+  const body = user.id ? { usuario_id: user.id } : { email: user.email };
+
+  const response = await fetchWithTimeout(`${API_BASE_URL}/admin/send-access-email`, {
     method: 'POST',
-    body: JSON.stringify({ email }),
-  }, 'Nao foi possivel enviar o email de acesso.');
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await parseApiResponse(response);
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error('Você não tem permissão para enviar acesso.');
+    }
+
+    if (response.status === 503) {
+      throw new Error('Servidor de email não configurado.');
+    }
+
+    throw new Error(getApiError(data, 'Não foi possível enviar o email de acesso.'));
+  }
+
+  return data as SendAccessEmailResponse;
 }
 
 export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
@@ -196,7 +260,7 @@ export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
 }
 
 export async function bootstrapAdmin(secret: string, name: string, email: string, password: string) {
-  const response = await fetch(`${API_BASE_URL}/admin/bootstrap-admin?secret=${encodeURIComponent(secret)}`, {
+  const response = await fetchWithTimeout(`${API_BASE_URL}/admin/bootstrap-admin?secret=${encodeURIComponent(secret)}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

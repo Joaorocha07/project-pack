@@ -6,7 +6,7 @@ import { ArrowRight, DownloadCloud, Loader2, LogOut, RefreshCw, Users } from 'lu
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { clearSession, getMe, importCaktoPurchases, type ImportCaktoSummary, type User } from '@/lib/auth';
+import { clearSession, getMe, importCaktoPurchases, isAdminRole, type ImportCaktoSummary, type User } from '@/lib/auth';
 
 const emptySummary: ImportCaktoSummary = {
   totalOrdersRead: 0,
@@ -41,7 +41,7 @@ export default function AdminPage() {
           return;
         }
 
-        if (currentUser.role !== 'ADMIN') {
+        if (!isAdminRole(currentUser.role)) {
           router.replace('/acesso');
           return;
         }

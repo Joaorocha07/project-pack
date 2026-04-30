@@ -15,14 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { clearSession, getMe, listUsers, sendAccessEmail, type AdminUser } from '@/lib/auth';
+import { clearSession, getMe, isAdminRole, listUsers, sendAccessEmail, type AdminUser } from '@/lib/auth';
 
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sendingEmailTo, setSendingEmailTo] = useState('');
+  const [sendingAccessTo, setSendingAccessTo] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -35,7 +35,7 @@ export default function AdminUsersPage() {
 
     try {
       const data = await listUsers();
-      setUsers(data.users ?? []);
+      setUsers((data.users ?? []).map(normalizeUser));
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao carregar usuarios.');
     } finally {
@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
           return;
         }
 
-        if (currentUser.role !== 'ADMIN') {
+        if (!isAdminRole(currentUser.role)) {
           router.replace('/acesso');
           return;
         }
@@ -85,19 +85,37 @@ export default function AdminUsersPage() {
     router.replace('/login');
   }
 
-  async function handleSendAccessEmail(email: string) {
+  async function handleSendAccessEmail(user: AdminUser) {
     setError('');
     setSuccess('');
-    setSendingEmailTo(email);
+    setSendingAccessTo(user.id || user.email);
 
     try {
-      await sendAccessEmail(email);
-      setSuccess(`Email de acesso enviado para ${email}.`);
-      await loadUsers();
+      const data = await sendAccessEmail(user);
+      const updatedUser = data.data?.usuario;
+
+      setSuccess(data.message || 'Email de acesso enviado com sucesso.');
+
+      if (updatedUser) {
+        setUsers((currentUsers) =>
+          currentUsers.map((currentUser) =>
+            currentUser.id === updatedUser.id || currentUser.email === updatedUser.email
+              ? {
+                  ...currentUser,
+                  name: updatedUser.nome || currentUser.name,
+                  email: updatedUser.email || currentUser.email,
+                  role: (updatedUser.perfil as AdminUser['role']) || currentUser.role,
+                  accessEmailSent: updatedUser.email_enviado === 'ENVIADO',
+                  accessEmailSentAt: updatedUser.enviado_em,
+                }
+              : currentUser
+          )
+        );
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao enviar email de acesso.');
     } finally {
-      setSendingEmailTo('');
+      setSendingAccessTo('');
     }
   }
 
@@ -178,7 +196,7 @@ export default function AdminUsersPage() {
                     <TableCell className="font-medium text-white">{user.name}</TableCell>
                     <TableCell className="min-w-[220px] break-all text-zinc-300">{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>{user.role}</Badge>
+                      <Badge variant={isAdminRole(user.role) ? 'default' : 'secondary'}>{user.role}</Badge>
                     </TableCell>
                     <TableCell>{user.hasAccess ? <StatusOk label="Sim" /> : <StatusMuted label="Nao" />}</TableCell>
                     <TableCell>{user.temporaryPassword ? <StatusMuted label="Sim" /> : <StatusOk label="Nao" />}</TableCell>
@@ -191,11 +209,11 @@ export default function AdminUsersPage() {
                         <Button
                           size="sm"
                           className="gap-2"
-                          onClick={() => handleSendAccessEmail(user.email)}
-                          disabled={sendingEmailTo === user.email}
+                          onClick={() => handleSendAccessEmail(user)}
+                          disabled={sendingAccessTo === (user.id || user.email)}
                         >
-                          {sendingEmailTo === user.email ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                          Enviar acesso
+                          {sendingAccessTo === (user.id || user.email) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                          {sendingAccessTo === (user.id || user.email) ? 'Enviando...' : 'Enviar acesso'}
                         </Button>
                       )}
                     </TableCell>
@@ -222,6 +240,22 @@ function StatusOk({ label }: { label: string }) {
 
 function StatusMuted({ label }: { label: string }) {
   return <span className="text-sm text-zinc-400">{label}</span>;
+}
+
+function normalizeUser(user: AdminUser | Record<string, unknown>): AdminUser {
+  const raw = user as Record<string, unknown>;
+  const emailStatus = typeof raw.email_enviado === 'string' ? raw.email_enviado : '';
+
+  return {
+    id: String(raw.id ?? ''),
+    name: String(raw.name ?? raw.nome ?? ''),
+    email: String(raw.email ?? ''),
+    role: String(raw.role ?? raw.perfil ?? 'USER') as AdminUser['role'],
+    hasAccess: Boolean(raw.hasAccess ?? raw.has_access ?? raw.tem_acesso ?? true),
+    temporaryPassword: Boolean(raw.temporaryPassword ?? raw.temporary_password ?? raw.senha_temporaria ?? false),
+    accessEmailSent: Boolean(raw.accessEmailSent ?? raw.access_email_sent ?? emailStatus === 'ENVIADO'),
+    accessEmailSentAt: (raw.accessEmailSentAt ?? raw.access_email_sent_at ?? raw.enviado_em ?? null) as string | null,
+  };
 }
 
 function formatDate(value: string | null) {

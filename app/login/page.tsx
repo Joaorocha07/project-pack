@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2, LockKeyhole, LogIn, Mail } from 'lucide-react';
 
-import { login, getStoredToken, getStoredUser } from '@/lib/auth';
+import { login, getStoredToken, getStoredUser, isAdminRole } from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +31,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace(user?.role === 'ADMIN' ? '/admin' : '/acesso');
+    router.replace(isAdminRole(user?.role) ? '/admin' : '/acesso');
   }, [router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
     try {
       const data = await login(email.trim(), password);
-      router.replace(data.user.temporaryPassword ? '/trocar-senha' : data.user.role === 'ADMIN' ? '/admin' : '/acesso');
+      router.replace(data.user.temporaryPassword ? '/trocar-senha' : isAdminRole(data.user.role) ? '/admin' : '/acesso');
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao fazer login. Tente novamente.');
     } finally {
