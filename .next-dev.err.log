@@ -1,0 +1,12 @@
+[Error: EPERM: operation not permitted, open 'D:\projetos\project-pack\.next\trace'] {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'open',
+  path: 'D:\\projetos\\project-pack\\.next\\trace'
+}
+[Error: EPERM: operation not permitted, open 'D:\projetos\project-pack\.next\trace'] {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'open',
+  path: 'D:\\projetos\\project-pack\\.next\\trace'
+}
