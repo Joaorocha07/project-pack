@@ -92,9 +92,9 @@ export default function AdminUsersPage() {
 
     try {
       const data = await sendAccessEmail(user);
-      const updatedUser = data.data?.usuario;
+      const updatedUser = data.user;
 
-      setSuccess(data.message || 'Email de acesso enviado com sucesso.');
+      setSuccess('Email de acesso enviado com sucesso.');
 
       if (updatedUser) {
         setUsers((currentUsers) =>
@@ -102,11 +102,13 @@ export default function AdminUsersPage() {
             currentUser.id === updatedUser.id || currentUser.email === updatedUser.email
               ? {
                   ...currentUser,
-                  name: updatedUser.nome || currentUser.name,
+                  name: updatedUser.name || currentUser.name,
                   email: updatedUser.email || currentUser.email,
-                  role: (updatedUser.perfil as AdminUser['role']) || currentUser.role,
-                  accessEmailSent: updatedUser.email_enviado === 'ENVIADO',
-                  accessEmailSentAt: updatedUser.enviado_em,
+                  role: updatedUser.role || currentUser.role,
+                  hasAccess: updatedUser.hasAccess,
+                  temporaryPassword: updatedUser.temporaryPassword,
+                  accessEmailSent: updatedUser.accessEmailSent,
+                  accessEmailSentAt: updatedUser.accessEmailSentAt,
                 }
               : currentUser
           )

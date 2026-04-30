@@ -28,19 +28,8 @@ export type ImportCaktoSummary = {
 };
 
 export type SendAccessEmailResponse = {
-  success: boolean;
-  type: string;
-  message: string;
-  data?: {
-    usuario?: {
-      id: string;
-      nome: string;
-      email: string;
-      perfil: string;
-      email_enviado: string;
-      enviado_em: string | null;
-    };
-  };
+  ok: boolean;
+  user: AdminUser;
 };
 
 const TOKEN_KEY = 'token';
@@ -222,37 +211,11 @@ export async function listUsers() {
   return apiFetch<{ ok: boolean; users: AdminUser[] }>('/admin/users', {}, 'Nao foi possivel listar usuarios.');
 }
 
-export async function sendAccessEmail(user: Pick<AdminUser, 'id' | 'email'>) {
-  const token = getStoredToken();
-  const body = {
-    email: user.email,
-    ...(user.id ? { usuario_id: user.id } : {}),
-  };
-
-  const response = await fetchWithTimeout(`${API_BASE_URL}/admin/send-access-email`, {
+export async function sendAccessEmail(user: Pick<AdminUser, 'email'>) {
+  return apiFetch<SendAccessEmailResponse>('/admin/send-access-email', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = await parseApiResponse(response);
-
-  if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      throw new Error('Você não tem permissão para enviar acesso.');
-    }
-
-    if (response.status === 503) {
-      throw new Error('Servidor de email não configurado.');
-    }
-
-    throw new Error(getApiError(data, 'Não foi possível enviar o email de acesso.'));
-  }
-
-  return data as SendAccessEmailResponse;
+    body: JSON.stringify({ email: user.email }),
+  }, 'Nao foi possivel enviar o email de acesso.');
 }
 
 export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
