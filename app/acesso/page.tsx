@@ -14,6 +14,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  X,
 } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -69,6 +71,7 @@ type ProtectedStickerCategory = {
   title: string;
   description: string;
   totalStickers: number;
+  coverImageId?: string | null;
   coverUrl: string | null;
   coverImageUrl?: string | null;
   coverImage?: {
@@ -210,7 +213,11 @@ export default function AccessPage() {
       return [];
     }
 
-    return protectedImagesByCategory[selectedProtectedCategory.id] ?? [];
+    return (protectedImagesByCategory[selectedProtectedCategory.id] ?? []).filter((sticker) => (
+      sticker.id !== selectedProtectedCategory.coverImageId &&
+      sticker.url !== selectedProtectedCategory.coverUrl &&
+      sticker.downloadUrl !== selectedProtectedCategory.coverUrl
+    ));
   }, [protectedImagesByCategory, selectedProtectedCategory]);
 
   useEffect(() => {
@@ -508,35 +515,54 @@ export default function AccessPage() {
 
       <Dialog open={Boolean(selectedProtectedCategory)} onOpenChange={(open) => !open && setSelectedProtectedCategory(null)}>
         {selectedProtectedCategory ? (
-          <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto border-white/10 bg-zinc-950 p-5 text-white sm:p-6">
-            <DialogHeader>
-              <DialogTitle className="text-2xl text-white">{selectedProtectedCategory.title}</DialogTitle>
-              <DialogDescription className="leading-6 text-zinc-400">
-                {selectedProtectedCategory.description || `${selectedProtectedCategory.totalStickers} figurinhas disponiveis para baixar.`}
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent className="max-h-[92vh] max-w-6xl overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl shadow-black/70 [&>button]:hidden">
+            <div className="flex max-h-[92vh] flex-col">
+              <div className="sticky top-0 z-10 border-b border-white/10 bg-zinc-950/95 p-5 backdrop-blur sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <DialogHeader className="space-y-2">
+                    <DialogTitle className="text-2xl text-white">{selectedProtectedCategory.title}</DialogTitle>
+                    <DialogDescription className="max-w-4xl leading-6 text-zinc-400">
+                      {selectedProtectedCategory.description || `${selectedProtectedStickers.length} figurinhas disponiveis para baixar.`}
+                    </DialogDescription>
+                  </DialogHeader>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {selectedProtectedStickers.map((sticker) => (
-                <a
-                  key={sticker.id}
-                  href={sticker.downloadUrl}
-                  download
-                  className="group overflow-hidden rounded-md border border-white/10 bg-black"
-                >
-                  <div className="flex aspect-square items-center justify-center p-4">
-                    <img
-                      src={sticker.url}
-                      alt=""
-                      className="max-h-full max-w-full object-contain transition group-hover:scale-105"
-                    />
+                  <DialogClose className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/15 bg-black text-zinc-300 transition hover:bg-white/10 hover:text-white">
+                    <span className="sr-only">Fechar</span>
+                    <X className="h-4 w-4" />
+                  </DialogClose>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto p-5 sm:p-6">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {selectedProtectedStickers.map((sticker) => (
+                    <a
+                      key={sticker.id}
+                      href={sticker.downloadUrl}
+                      download
+                      className="group overflow-hidden rounded-lg border border-white/10 bg-black transition hover:border-emerald-400/40"
+                    >
+                      <div className="flex aspect-square items-center justify-center bg-[linear-gradient(45deg,#111_25%,transparent_25%),linear-gradient(-45deg,#111_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#111_75%),linear-gradient(-45deg,transparent_75%,#111_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-5">
+                        <img
+                          src={sticker.url}
+                          alt=""
+                          className="max-h-full max-w-full object-contain transition group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 border-t border-white/10 p-3">
+                        <span className="truncate text-sm font-medium text-zinc-200">{sticker.name}</span>
+                        <Download className="h-4 w-4 shrink-0 text-zinc-400" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+
+                {!selectedProtectedStickers.length ? (
+                  <div className="rounded-lg border border-white/10 bg-black p-8 text-center text-sm text-zinc-500">
+                    Nenhuma figurinha disponivel para download nesta categoria.
                   </div>
-                  <div className="flex items-center justify-between gap-2 border-t border-white/10 p-3">
-                    <span className="truncate text-xs text-zinc-300">{sticker.name}</span>
-                    <Download className="h-4 w-4 shrink-0 text-zinc-400" />
-                  </div>
-                </a>
-              ))}
+                ) : null}
+              </div>
             </div>
           </DialogContent>
         ) : null}
