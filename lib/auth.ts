@@ -2,7 +2,8 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'USER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'USER' | 'TESTE' | 'AFILIADO' | 'admin' | 'user' | 'teste' | 'afiliado';
+  roleLabel?: 'admin' | 'user' | 'teste' | 'afiliado';
   hasAccess: boolean;
   temporaryPassword: boolean;
 };
@@ -14,6 +15,18 @@ type LoginResponse = {
 export type AdminUser = User & {
   accessEmailSent: boolean;
   accessEmailSentAt: string | null;
+  profile?: UserProfile | null;
+};
+
+export type UserRoleLabel = 'admin' | 'user' | 'teste' | 'afiliado';
+
+export type UserProfile = {
+  id: string;
+  role: string;
+  roleLabel: UserRoleLabel;
+  temporarilyDisabled: boolean;
+  disabledUntil: string | null;
+  disabledReason: string | null;
 };
 
 export type ImportCaktoSummary = {
@@ -26,6 +39,13 @@ export type ImportCaktoSummary = {
 
 export type SendAccessEmailResponse = {
   ok: boolean;
+  message?: string;
+  user: AdminUser;
+};
+
+export type AdminUserMutationResponse = {
+  ok: boolean;
+  message: string;
   user: AdminUser;
 };
 
@@ -131,7 +151,8 @@ export async function clearSession() {
 }
 
 export function isAdminRole(role?: User['role']) {
-  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  const normalizedRole = String(role ?? '').toLowerCase();
+  return normalizedRole === 'admin' || normalizedRole === 'super_admin';
 }
 
 async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = 'Erro na requisicao') {
@@ -220,6 +241,33 @@ export async function sendAccessEmail(user: Pick<AdminUser, 'email'>) {
     method: 'POST',
     body: JSON.stringify({ email: user.email }),
   }, 'Nao foi possivel enviar o email de acesso.');
+}
+
+export async function updateUserRole(userId: string, role: UserRoleLabel) {
+  return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  }, 'Nao foi possivel alterar o tipo de perfil.');
+}
+
+export async function temporarilyDisableUser(userId: string, disabledUntil: string, reason: string) {
+  return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/temporary-disable`, {
+    method: 'PATCH',
+    body: JSON.stringify({ disabledUntil, reason }),
+  }, 'Nao foi possivel desativar temporariamente a conta.');
+}
+
+export async function reactivateUser(userId: string) {
+  return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/temporary-disable`, {
+    method: 'DELETE',
+  }, 'Nao foi possivel reativar a conta.');
+}
+
+export async function updateUserPassword(userId: string, password: string, temporaryPassword = false) {
+  return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ password, temporaryPassword }),
+  }, 'Nao foi possivel alterar a senha do perfil.');
 }
 
 export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
