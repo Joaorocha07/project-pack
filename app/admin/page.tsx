@@ -349,11 +349,10 @@ export default function AdminPage() {
       return;
     }
 
-    const batches = splitFilesForVercel(normalizedFiles.files);
-
     setIsUploadingSticker(true);
 
     try {
+      const batches = splitFilesForVercel(normalizedFiles.files);
       let uploaded = 0;
 
       for (let index = 0; index < batches.length; index += 1) {
@@ -1166,10 +1165,6 @@ function splitFilesForVercel(files: File[]) {
   let size = 0;
 
   for (const file of files) {
-    if (file.size >= VERCEL_SAFE_UPLOAD_BYTES) {
-      throw new Error(`O arquivo ${file.name} passa de 3.8MB. Comprima antes de enviar.`);
-    }
-
     if (batch.length && size + file.size > VERCEL_SAFE_UPLOAD_BYTES) {
       batches.push(batch);
       batch = [];
