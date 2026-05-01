@@ -562,15 +562,30 @@ export default function AccessPage() {
 
       <Dialog open={Boolean(selectedProtectedCategory)} onOpenChange={(open) => !open && setSelectedProtectedCategory(null)}>
         {selectedProtectedCategory ? (
-          <DialogContent className="max-h-[92vh] max-w-6xl overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl shadow-black/70 [&>button]:hidden">
+          <DialogContent className="max-h-[92vh] max-w-7xl overflow-hidden border-white/10 bg-zinc-950 p-0 text-white shadow-2xl shadow-black/70 [&>button]:hidden">
             <div className="flex max-h-[92vh] flex-col">
-              <div className="sticky top-0 z-10 border-b border-white/10 bg-zinc-950/95 p-5 backdrop-blur sm:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <DialogHeader className="space-y-2">
-                    <DialogTitle className="text-2xl text-white">{selectedProtectedCategory.title}</DialogTitle>
-                    <DialogDescription className="max-w-4xl leading-6 text-zinc-400">
+              <div className="relative border-b border-white/10 bg-black">
+                {selectedProtectedCategory.coverUrl ? (
+                  <img
+                    src={selectedProtectedCategory.coverUrl}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover opacity-25"
+                  />
+                ) : null}
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/70" />
+                <div className="relative flex items-start justify-between gap-4 p-5 sm:p-6">
+                  <DialogHeader className="space-y-3">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Coleção premium
+                    </div>
+                    <DialogTitle className="text-3xl text-white sm:text-4xl">{selectedProtectedCategory.title}</DialogTitle>
+                    <DialogDescription className="max-w-4xl text-base leading-7 text-zinc-300">
                       {selectedProtectedCategory.description || `${selectedProtectedStickers.length} figurinhas disponiveis para baixar.`}
                     </DialogDescription>
+                    <p className="text-sm text-zinc-500">
+                      {selectedProtectedStickers.length} de {selectedProtectedCategory.totalStickers} itens carregados
+                    </p>
                   </DialogHeader>
 
                   <DialogClose className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/15 bg-black text-zinc-300 transition hover:bg-white/10 hover:text-white">
@@ -581,15 +596,15 @@ export default function AccessPage() {
               </div>
 
               <div className="overflow-y-auto p-5 sm:p-6">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
                   {selectedProtectedStickers.map((sticker) => (
                     <a
                       key={sticker.id}
                       href={sticker.downloadUrl}
                       download
-                      className="group overflow-hidden rounded-lg border border-white/10 bg-black transition hover:border-emerald-400/40"
+                      className="group overflow-hidden rounded-lg border border-white/10 bg-black transition hover:-translate-y-0.5 hover:border-emerald-400/40"
                     >
-                      <div className="flex aspect-square items-center justify-center bg-[linear-gradient(45deg,#111_25%,transparent_25%),linear-gradient(-45deg,#111_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#111_75%),linear-gradient(-45deg,transparent_75%,#111_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-5">
+                      <div className="flex aspect-square items-center justify-center bg-[linear-gradient(45deg,#111_25%,transparent_25%),linear-gradient(-45deg,#111_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#111_75%),linear-gradient(-45deg,transparent_75%,#111_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-4">
                         <img
                           src={sticker.url}
                           alt=""
