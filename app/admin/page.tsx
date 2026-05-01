@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, DownloadCloud, Folder
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { clearSession, getMe, importCaktoPurchases, isAdminRole, type ImportCaktoSummary, type User } from '@/lib/auth';
 
 const emptySummary: ImportCaktoSummary = {
@@ -26,18 +27,34 @@ type StickerCategory = {
   title: string;
   description: string;
   totalStickers: number;
+  total_stickers?: number;
   coverImageId?: string | null;
+  cover_image_id?: string | null;
   coverUrl: string | null;
+  cover_url?: string | null;
+  coverImageUrl?: string | null;
+  cover_image_url?: string | null;
+  coverImage?: {
+    url?: string | null;
+  } | null;
+  cover_image?: {
+    url?: string | null;
+  } | null;
 };
 
 type StickerImage = {
   id: string;
   name: string;
   originalName: string;
+  original_name?: string;
   mimeType: string;
+  mime_type?: string;
   size: number;
   url: string;
   downloadUrl: string;
+  download_url?: string;
+  imageUrl?: string;
+  image_url?: string;
   createdAt: string;
 };
 
@@ -62,6 +79,7 @@ export default function AdminPage() {
   const [editCategoryDescription, setEditCategoryDescription] = useState('');
   const [editingImageId, setEditingImageId] = useState('');
   const [editingImageName, setEditingImageName] = useState('');
+  const [failedImageIds, setFailedImageIds] = useState<Record<string, string>>({});
   const [busyAction, setBusyAction] = useState('');
   const [imagePage, setImagePage] = useState(1);
   const [uploadProgress, setUploadProgress] = useState('');
@@ -220,6 +238,7 @@ export default function AdminPage() {
       );
 
       setManagedImages((data.images ?? []).map(normalizeStickerImage));
+      setFailedImageIds({});
       setImagePage(1);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao carregar figurinhas.');
@@ -602,7 +621,28 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <Tabs defaultValue="importar" className="space-y-5">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg border border-white/10 bg-zinc-950 p-2 lg:grid-cols-4">
+            <TabsTrigger value="importar" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+              <DownloadCloud className="h-4 w-4" />
+              Importar
+            </TabsTrigger>
+            <TabsTrigger value="criar" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+              <FolderPlus className="h-4 w-4" />
+              Criar card
+            </TabsTrigger>
+            <TabsTrigger value="enviar" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+              <Upload className="h-4 w-4" />
+              Enviar
+            </TabsTrigger>
+            <TabsTrigger value="gerenciar" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-black">
+              <Pencil className="h-4 w-4" />
+              Gerenciar
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="importar" className="mt-0">
+            <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-lg border border-white/10 bg-zinc-950 p-6">
             <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-md bg-white text-black">
               <DownloadCloud className="h-5 w-5" aria-hidden="true" />
@@ -634,9 +674,11 @@ export default function AdminPage() {
               <SummaryItem label="Emails enviados" value={summary?.emailsSent ?? 0} />
             </div>
           </div>
-        </div>
+            </div>
+          </TabsContent>
 
-        <form onSubmit={handleCreateCategory} className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+          <TabsContent value="criar" className="mt-0">
+            <form onSubmit={handleCreateCategory} className="overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
           <div className="border-b border-white/10 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex gap-4">
@@ -708,9 +750,11 @@ export default function AdminPage() {
               </Button>
             </div>
           </div>
-        </form>
+            </form>
+          </TabsContent>
 
-        <form onSubmit={handleStickerUpload} className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+          <TabsContent value="enviar" className="mt-0">
+            <form onSubmit={handleStickerUpload} className="overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
           <div className="border-b border-white/10 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex gap-4">
@@ -785,9 +829,11 @@ export default function AdminPage() {
               </Button>
             </div>
           </div>
-        </form>
+            </form>
+          </TabsContent>
 
-        <section className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+          <TabsContent value="gerenciar" className="mt-0">
+            <section className="overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
           <div className="border-b border-white/10 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex gap-4">
@@ -919,7 +965,32 @@ export default function AdminPage() {
                             src={image.url}
                             alt=""
                             className="max-h-full max-w-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
+                            onLoad={() => {
+                              setFailedImageIds((current) => {
+                                if (!current[image.id]) {
+                                  return current;
+                                }
+
+                                const { [image.id]: _failedImage, ...next } = current;
+                                return next;
+                              });
+                            }}
+                            onError={() => {
+                              setFailedImageIds((current) => ({
+                                ...current,
+                                [image.id]: image.url,
+                              }));
+                            }}
                           />
+                          {failedImageIds[image.id] ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/80 p-4 text-center">
+                              <AlertCircle className="h-5 w-5 text-red-300" />
+                              <p className="text-xs font-medium text-red-200">Imagem nao carregou</p>
+                              <p className="max-w-full break-all text-[11px] leading-4 text-zinc-500">
+                                {failedImageIds[image.id]}
+                              </p>
+                            </div>
+                          ) : null}
                           {isCover ? (
                             <span className="absolute left-3 top-3 inline-flex rounded-full bg-emerald-400 px-2.5 py-1 text-xs font-semibold text-black">
                               Capa
@@ -1056,7 +1127,9 @@ export default function AdminPage() {
               ) : null}
             </div>
           </div>
-        </section>
+            </section>
+          </TabsContent>
+        </Tabs>
       </section>
 
       {error || success ? (
@@ -1252,18 +1325,40 @@ function getUploadSortName(file: File) {
 }
 
 function normalizeStickerCategory(category: StickerCategory) {
+  const coverUrl =
+    category.coverUrl ??
+    category.cover_url ??
+    category.coverImageUrl ??
+    category.cover_image_url ??
+    category.coverImage?.url ??
+    category.cover_image?.url ??
+    null;
+  const coverImageId = category.coverImageId ?? category.cover_image_id ?? null;
+  const totalStickers = Number(
+    category.totalStickers ??
+    category.total_stickers ??
+    (category as StickerCategory & { count?: number }).count ??
+    0
+  );
+
   return {
     ...category,
-    coverUrl: normalizeProtectedUrl(category.coverUrl),
+    coverImageId,
+    totalStickers,
+    coverUrl: normalizeProtectedUrl(coverUrl),
   };
 }
 
 function normalizeStickerImage(image: StickerImage) {
+  const imageUrl = image.url ?? image.imageUrl ?? image.image_url ?? null;
+  const downloadUrl = image.downloadUrl ?? image.download_url ?? imageUrl;
+
   return {
     ...image,
-    name: image.name || image.originalName || 'figurinha',
-    url: normalizeProtectedUrl(image.url) ?? '',
-    downloadUrl: normalizeProtectedUrl(image.downloadUrl) ?? '',
+    name: image.name || image.originalName || image.original_name || 'figurinha',
+    mimeType: image.mimeType ?? image.mime_type ?? '',
+    url: normalizeProtectedUrl(imageUrl) ?? '',
+    downloadUrl: normalizeProtectedUrl(downloadUrl) ?? '',
   };
 }
 

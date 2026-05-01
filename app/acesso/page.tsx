@@ -59,10 +59,15 @@ type ProtectedStickerImage = {
   id: string;
   name: string;
   originalName?: string;
+  original_name?: string;
   mimeType?: string;
+  mime_type?: string;
   size?: number;
   url: string;
   downloadUrl: string;
+  download_url?: string;
+  imageUrl?: string;
+  image_url?: string;
 };
 
 type ProtectedStickerCategory = {
@@ -71,10 +76,17 @@ type ProtectedStickerCategory = {
   title: string;
   description: string;
   totalStickers: number;
+  total_stickers?: number;
   coverImageId?: string | null;
+  cover_image_id?: string | null;
   coverUrl: string | null;
+  cover_url?: string | null;
   coverImageUrl?: string | null;
+  cover_image_url?: string | null;
   coverImage?: {
+    url?: string | null;
+  } | null;
+  cover_image?: {
     url?: string | null;
   } | null;
 };
@@ -572,26 +584,40 @@ export default function AccessPage() {
 }
 
 function normalizeCategory(category: ProtectedStickerCategory) {
-  const coverUrl = category.coverUrl ?? category.coverImageUrl ?? category.coverImage?.url ?? null;
+  const coverUrl =
+    category.coverUrl ??
+    category.cover_url ??
+    category.coverImageUrl ??
+    category.cover_image_url ??
+    category.coverImage?.url ??
+    category.cover_image?.url ??
+    null;
+  const coverImageId = category.coverImageId ?? category.cover_image_id ?? null;
   const totalStickers = Number(
     (category as ProtectedStickerCategory & { count?: number }).totalStickers ??
+    category.total_stickers ??
     (category as ProtectedStickerCategory & { count?: number }).count ??
     0
   );
 
   return {
     ...category,
+    coverImageId,
     totalStickers,
     coverUrl: normalizeProtectedUrl(coverUrl),
   };
 }
 
 function normalizeImage(image: ProtectedStickerImage) {
+  const imageUrl = image.url ?? image.imageUrl ?? image.image_url ?? null;
+  const downloadUrl = image.downloadUrl ?? image.download_url ?? imageUrl;
+
   return {
     ...image,
-    name: image.name || image.originalName || 'figurinha',
-    url: normalizeProtectedUrl(image.url) ?? '',
-    downloadUrl: normalizeProtectedUrl(image.downloadUrl) ?? '',
+    name: image.name || image.originalName || image.original_name || 'figurinha',
+    mimeType: image.mimeType ?? image.mime_type ?? '',
+    url: normalizeProtectedUrl(imageUrl) ?? '',
+    downloadUrl: normalizeProtectedUrl(downloadUrl) ?? '',
   };
 }
 

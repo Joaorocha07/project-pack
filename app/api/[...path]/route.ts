@@ -10,6 +10,7 @@ type RouteContext = {
 
 async function handler(request: NextRequest, context: RouteContext) {
   const path = `/${context.params.path.join('/')}`;
+  const backendUrl = `${API_BASE_URL}${path}${request.nextUrl.search}`;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
   if (path === '/auth/logout') {
@@ -33,7 +34,7 @@ async function handler(request: NextRequest, context: RouteContext) {
   const body = requestBody?.byteLength ? requestBody : undefined;
   const headers = new Headers();
 
-  headers.set('Accept', 'application/json');
+  headers.set('Accept', request.headers.get('Accept') ?? 'application/json');
 
   if (body) {
     headers.set('Content-Type', request.headers.get('Content-Type') ?? 'application/json');
@@ -43,7 +44,7 @@ async function handler(request: NextRequest, context: RouteContext) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const backendResponse = await fetch(`${API_BASE_URL}${path}`, {
+  const backendResponse = await fetch(backendUrl, {
     method: request.method,
     headers,
     body,
