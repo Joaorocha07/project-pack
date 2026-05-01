@@ -50,6 +50,7 @@ export type AdminUserMutationResponse = {
 };
 
 const USER_KEY = 'user';
+const DEVICE_ID_KEY = 'pack_device_id';
 const REQUEST_TIMEOUT_MS = 45000;
 const API_BASE_URL = '/api';
 
@@ -134,6 +135,21 @@ export function saveUser(user: User) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
+export function getOrCreateDeviceId() {
+  const storedDeviceId = localStorage.getItem(DEVICE_ID_KEY);
+
+  if (storedDeviceId) {
+    return storedDeviceId;
+  }
+
+  const deviceId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  return deviceId;
+}
+
 export async function clearSession() {
   localStorage.removeItem(USER_KEY);
 
@@ -181,14 +197,14 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
   return data as T;
 }
 
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string, deviceId = getOrCreateDeviceId()) {
   const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, deviceId, device_id: deviceId }),
   });
 
   const data = (await parseApiResponse(response)) as Partial<LoginResponse> & {
