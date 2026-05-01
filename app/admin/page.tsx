@@ -18,6 +18,7 @@ const emptySummary: ImportCaktoSummary = {
   emailsSent: 0,
 };
 const IMAGES_PER_PAGE = 24;
+const IMAGE_BATCH_SIZE = 60;
 const VERCEL_SAFE_UPLOAD_BYTES = Math.floor(3.8 * 1024 * 1024);
 const MAX_STICKER_IMAGE_DIMENSION = 1600;
 
@@ -58,6 +59,26 @@ type StickerImage = {
   createdAt: string;
 };
 
+type StorageUsage = {
+  label?: string;
+  description?: string;
+  currentBytes: number;
+  currentMb?: number;
+  currentFormatted?: string;
+  limitBytes: number | null;
+  limitMb?: number | null;
+  limitFormatted?: string | null;
+  percentUsed?: number | null;
+  remainingBytes?: number | null;
+  remainingMb?: number | null;
+  uploadBytes?: number;
+  nextBytes?: number;
+  isLimitEnabled?: boolean;
+  isOverLimit?: boolean;
+  wouldExceedLimit?: boolean;
+  shouldBlockUploads?: boolean;
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [admin, setAdmin] = useState<User | null>(null);
@@ -68,6 +89,8 @@ export default function AdminPage() {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [stickerCategory, setStickerCategory] = useState('acessorios');
   const [stickerCategories, setStickerCategories] = useState<StickerCategory[]>([]);
+  const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
+  const [isLoadingStorageUsage, setIsLoadingStorageUsage] = useState(false);
   const [newCategoryTitle, setNewCategoryTitle] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [newCategoryCover, setNewCategoryCover] = useState<File | null>(null);
@@ -82,15 +105,23 @@ export default function AdminPage() {
   const [failedImageIds, setFailedImageIds] = useState<Record<string, string>>({});
   const [busyAction, setBusyAction] = useState('');
   const [imagePage, setImagePage] = useState(1);
+  const [managedImageBatchPage, setManagedImageBatchPage] = useState(1);
   const [uploadProgress, setUploadProgress] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const selectedUploadCategory = stickerCategories.find((category) => category.id === stickerCategory);
   const managedCategory = stickerCategories.find((category) => category.id === managedCategoryId);
   const selectedFolderSize = stickerFiles.reduce((total, file) => total + file.size, 0);
+  const storageCurrentBytes = storageUsage?.currentBytes ?? 0;
+  const storageNextBytes = storageCurrentBytes + selectedFolderSize;
+  const storageLimitBytes = storageUsage?.limitBytes ?? null;
+  const storagePercentUsed = getUsagePercent(storageUsage?.percentUsed, storageCurrentBytes, storageLimitBytes);
+  const storageRemainingBytes = storageLimitBytes === null ? null : Math.max(0, storageLimitBytes - storageCurrentBytes);
+  const storageWouldExceedLimit = Boolean(storageUsage?.shouldBlockUploads) || (storageLimitBytes !== null && storageNextBytes > storageLimitBytes);
   const totalImagePages = Math.max(1, Math.ceil(managedImages.length / IMAGES_PER_PAGE));
   const currentImagePage = Math.min(imagePage, totalImagePages);
   const paginatedManagedImages = managedImages.slice((currentImagePage - 1) * IMAGES_PER_PAGE, currentImagePage * IMAGES_PER_PAGE);
+  const hasMoreManagedImages = Boolean(managedCategory && managedImages.length < managedCategory.totalStickers);
 
   useEffect(() => {
     if (!error && !success) {
@@ -127,7 +158,7 @@ export default function AdminPage() {
         }
 
         setAdmin(currentUser);
-        await loadStickerCategories();
+        await Promise.all([loadStickerCategories(), loadStorageUsage()]);
       } catch {
         if (isMounted) {
           router.replace('/login');
@@ -201,6 +232,26 @@ export default function AdminPage() {
     }
   }
 
+  async function loadStorageUsage() {
+    setIsLoadingStorageUsage(true);
+
+    try {
+      const response = await fetch('/api/admin/stickers/storage-usage', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        storage?: StorageUsage;
+      };
+
+      if (response.ok) {
+        setStorageUsage(data.storage ?? null);
+      }
+    } finally {
+      setIsLoadingStorageUsage(false);
+    }
+  }
+
   async function requestJson<T>(url: string, options: RequestInit = {}, fallback = 'Nao foi possivel concluir a acao.') {
     const headers = new Headers(options.headers);
 
@@ -222,7 +273,7 @@ export default function AdminPage() {
     return data;
   }
 
-  async function loadManagedCategoryImages(categoryId = managedCategoryId) {
+  async function loadManagedCategoryImages(categoryId = managedCategoryId, page = 1, resetPage = true) {
     if (!categoryId) {
       setManagedImages([]);
       return;
@@ -232,14 +283,18 @@ export default function AdminPage() {
 
     try {
       const data = await requestJson<{ images?: StickerImage[] }>(
-        `/api/stickers/categories/${encodeURIComponent(categoryId)}/images`,
+        `/api/stickers/categories/${encodeURIComponent(categoryId)}/images?page=${page}&limit=${IMAGE_BATCH_SIZE}`,
         { cache: 'no-store' },
         'Nao foi possivel carregar as figurinhas.'
       );
 
-      setManagedImages((data.images ?? []).map(normalizeStickerImage));
+      const nextImages = (data.images ?? []).map(normalizeStickerImage);
+      setManagedImages((current) => page === 1 ? nextImages : mergeImagesById(current, nextImages));
+      setManagedImageBatchPage(page);
       setFailedImageIds({});
-      setImagePage(1);
+      if (resetPage) {
+        setImagePage(1);
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao carregar figurinhas.');
     } finally {
@@ -255,8 +310,27 @@ export default function AdminPage() {
     setEditCategoryDescription(category?.description ?? '');
     setEditingImageId('');
     setEditingImageName('');
+    setManagedImageBatchPage(1);
     setImagePage(1);
-    void loadManagedCategoryImages(categoryId);
+    void loadManagedCategoryImages(categoryId, 1);
+  }
+
+  function handleLoadMoreManagedImages() {
+    if (!managedCategoryId || isLoadingManagedImages) {
+      return;
+    }
+
+    void loadManagedCategoryImages(managedCategoryId, managedImageBatchPage + 1, false);
+  }
+
+  async function handleNextManagedImagePage() {
+    if (currentImagePage >= totalImagePages && hasMoreManagedImages) {
+      await loadManagedCategoryImages(managedCategoryId, managedImageBatchPage + 1, false);
+      setImagePage((page) => page + 1);
+      return;
+    }
+
+    setImagePage((page) => Math.min(totalImagePages, page + 1));
   }
 
   async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
@@ -329,7 +403,7 @@ export default function AdminPage() {
       setNewCategoryDescription('');
       setNewCategoryCover(null);
       setSuccess('Categoria criada e pronta para receber figurinhas.');
-      await loadStickerCategories();
+      await Promise.all([loadStickerCategories(), loadStorageUsage()]);
       form.reset();
 
       if (data.category?.id) {
@@ -362,8 +436,6 @@ export default function AdminPage() {
 
     const normalizedFiles = normalizeStickerUploadFiles(stickerFiles);
 
-    console.log(normalizedFiles)
-
     if (!normalizedFiles.ok) {
       setError(normalizedFiles.error);
       return;
@@ -391,7 +463,7 @@ export default function AdminPage() {
           ? `${uploaded} figurinhas enviadas com seguranca para a area protegida.`
           : 'Figurinha enviada com seguranca para a area protegida.'
       );
-      await loadStickerCategories();
+      await Promise.all([loadStickerCategories(), loadStorageUsage()]);
       await loadManagedCategoryImages(stickerCategory);
       form.reset();
     } catch (caughtError) {
@@ -477,7 +549,7 @@ export default function AdminPage() {
       setSuccess('Categoria excluida.');
       setManagedImages([]);
       setManagedCategoryId('');
-      await loadStickerCategories();
+      await Promise.all([loadStickerCategories(), loadStorageUsage()]);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao excluir categoria.');
     } finally {
@@ -572,7 +644,7 @@ export default function AdminPage() {
         method: 'DELETE',
       }, 'Nao foi possivel excluir a figurinha.');
       setSuccess('Figurinha excluida.');
-      await Promise.all([loadManagedCategoryImages(), loadStickerCategories()]);
+      await Promise.all([loadManagedCategoryImages(), loadStickerCategories(), loadStorageUsage()]);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao excluir figurinha.');
     } finally {
@@ -620,6 +692,71 @@ export default function AdminPage() {
             Ver usuarios
           </Button>
         </div>
+
+        <section className="mb-5 rounded-lg border border-white/10 bg-zinc-950 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <h3 className="text-base font-semibold text-white">{storageUsage?.label ?? 'Uso do armazenamento'}</h3>
+                {isLoadingStorageUsage ? <Loader2 className="h-4 w-4 animate-spin text-zinc-500" /> : null}
+                {storageUsage?.shouldBlockUploads ? (
+                  <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-300">
+                    Upload bloqueado
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-sm text-zinc-500">
+                {storageUsage
+                  ? storageUsage.description || `${storageUsage.currentFormatted ?? formatFileSize(storageCurrentBytes)} usados`
+                  : 'Nao foi possivel carregar o uso atual.'}
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
+              <StorageMetric label="Atual" value={storageUsage?.currentFormatted ?? formatFileSize(storageCurrentBytes)} tone="text-emerald-300" />
+              <StorageMetric label="Limite" value={storageUsage?.limitFormatted ?? 'Sem limite'} />
+              <StorageMetric
+                label="Restante"
+                value={storageUsage?.remainingMb != null ? `${storageUsage.remainingMb} MB` : storageRemainingBytes != null ? formatFileSize(storageRemainingBytes) : 'Sem limite'}
+                tone={storageUsage?.shouldBlockUploads ? 'text-red-300' : undefined}
+              />
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-10 gap-2"
+              onClick={loadStorageUsage}
+              disabled={isLoadingStorageUsage}
+            >
+              {isLoadingStorageUsage ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Atualizar
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            <div className="h-2 overflow-hidden rounded-full bg-black">
+              <div
+                className="h-full rounded-full bg-emerald-400 transition-all"
+                style={{ width: `${Math.min(100, storagePercentUsed)}%` }}
+              />
+            </div>
+            <div className="mt-2 flex flex-col gap-1 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {storageUsage?.percentUsed != null
+                  ? `${Math.round(storageUsage.percentUsed)}% usado`
+                  : storageLimitBytes
+                    ? `${Math.round(storagePercentUsed)}% usado`
+                    : 'Sem limite configurado no backend'}
+              </span>
+              {selectedFolderSize ? (
+                <span className={storageWouldExceedLimit ? 'text-red-300' : 'text-emerald-300'}>
+                  {storageWouldExceedLimit ? 'Uploads bloqueados pelo limite atual' : `Selecionado para envio: ${formatFileSize(selectedFolderSize)}`}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </section>
 
         <Tabs defaultValue="importar" className="space-y-5">
           <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg border border-white/10 bg-zinc-950 p-2 lg:grid-cols-4">
@@ -964,6 +1101,7 @@ export default function AdminPage() {
                           <img
                             src={image.url}
                             alt=""
+                            loading="lazy"
                             className="max-h-full max-w-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
                             onLoad={() => {
                               setFailedImageIds((current) => {
@@ -1116,13 +1254,28 @@ export default function AdminPage() {
                       variant="secondary"
                       size="sm"
                       className="gap-2"
-                      onClick={() => setImagePage((page) => Math.min(totalImagePages, page + 1))}
-                      disabled={currentImagePage >= totalImagePages}
+                      onClick={handleNextManagedImagePage}
+                      disabled={currentImagePage >= totalImagePages && !hasMoreManagedImages}
                     >
                       Proxima
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
+                </div>
+              ) : null}
+
+              {hasMoreManagedImages ? (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={handleLoadMoreManagedImages}
+                    disabled={isLoadingManagedImages}
+                  >
+                    {isLoadingManagedImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    Carregar mais {Math.min(IMAGE_BATCH_SIZE, (managedCategory?.totalStickers ?? 0) - managedImages.length)}
+                  </Button>
                 </div>
               ) : null}
             </div>
@@ -1199,6 +1352,27 @@ function SummaryItem({ label, value }: { label: string; value: number }) {
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
+}
+
+function StorageMetric({ label, value, tone = 'text-white' }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-black p-3">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className={`mt-1 text-sm font-semibold ${tone}`}>{value}</p>
+    </div>
+  );
+}
+
+function getUsagePercent(percentUsed: number | null | undefined, currentBytes: number, limitBytes: number | null) {
+  if (typeof percentUsed === 'number') {
+    return Math.max(0, Math.min(100, percentUsed));
+  }
+
+  if (!limitBytes) {
+    return 0;
+  }
+
+  return Math.min(100, (currentBytes / limitBytes) * 100);
 }
 
 function formatFileSize(bytes: number) {
@@ -1360,6 +1534,20 @@ function normalizeStickerImage(image: StickerImage) {
     url: normalizeProtectedUrl(imageUrl) ?? '',
     downloadUrl: normalizeProtectedUrl(downloadUrl) ?? '',
   };
+}
+
+function mergeImagesById(current: StickerImage[], next: StickerImage[]) {
+  const seen = new Set(current.map((image) => image.id));
+  const uniqueNext = next.filter((image) => {
+    if (seen.has(image.id)) {
+      return false;
+    }
+
+    seen.add(image.id);
+    return true;
+  });
+
+  return [...current, ...uniqueNext];
 }
 
 function normalizeProtectedUrl(url?: string | null) {

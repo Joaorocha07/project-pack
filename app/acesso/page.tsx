@@ -45,6 +45,8 @@ import figurinha03 from '@/images/figurinha03.webp';
 import figurinha04 from '@/images/figurinha04.webp';
 import figurinha05 from '@/images/figurinha05.webp';
 
+const IMAGE_BATCH_SIZE = 60;
+
 type ProductCategory = {
   id: string;
   title: string;
@@ -193,6 +195,8 @@ export default function AccessPage() {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [selectedProtectedCategory, setSelectedProtectedCategory] = useState<ProtectedStickerCategory | null>(null);
   const [protectedImagesByCategory, setProtectedImagesByCategory] = useState<Record<string, ProtectedStickerImage[]>>({});
+  const [protectedImagePagesByCategory, setProtectedImagePagesByCategory] = useState<Record<string, number>>({});
+  const [loadingMoreCategoryId, setLoadingMoreCategoryId] = useState('');
   const [protectedCategories, setProtectedCategories] = useState<ProtectedStickerCategory[]>([]);
 
   const filteredCategories = useMemo(() => {
@@ -231,6 +235,10 @@ export default function AccessPage() {
       sticker.downloadUrl !== selectedProtectedCategory.coverUrl
     ));
   }, [protectedImagesByCategory, selectedProtectedCategory]);
+  const hasMoreProtectedStickers = Boolean(
+    selectedProtectedCategory &&
+    (protectedImagesByCategory[selectedProtectedCategory.id]?.length ?? 0) < selectedProtectedCategory.totalStickers
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -301,23 +309,50 @@ export default function AccessPage() {
       return;
     }
 
-    const response = await fetch(`/api/stickers/categories/${encodeURIComponent(category.id)}/images`, {
-      credentials: 'include',
-    });
-    const data = (await response.json().catch(() => ({}))) as {
-      images?: ProtectedStickerImage[];
-      error?: string;
-    };
+    await loadProtectedCategoryImages(category, 1);
+  }
 
-    if (!response.ok) {
-      setError(data.error || 'Nao foi possivel carregar as figurinhas da categoria.');
+  async function loadProtectedCategoryImages(category: ProtectedStickerCategory, page: number) {
+    setLoadingMoreCategoryId(category.id);
+
+    try {
+      const response = await fetch(`/api/stickers/categories/${encodeURIComponent(category.id)}/images?page=${page}&limit=${IMAGE_BATCH_SIZE}`, {
+        credentials: 'include',
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        images?: ProtectedStickerImage[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setError(data.error || 'Nao foi possivel carregar as figurinhas da categoria.');
+        return;
+      }
+
+      setProtectedImagesByCategory((current) => ({
+        ...current,
+        [category.id]: page === 1
+          ? (data.images ?? []).map(normalizeImage)
+          : mergeImagesById(current[category.id] ?? [], (data.images ?? []).map(normalizeImage)),
+      }));
+      setProtectedImagePagesByCategory((current) => ({
+        ...current,
+        [category.id]: page,
+      }));
+    } catch {
+      setError('Nao foi possivel carregar as figurinhas da categoria.');
+    } finally {
+      setLoadingMoreCategoryId('');
+    }
+  }
+
+  function handleLoadMoreProtectedStickers() {
+    if (!selectedProtectedCategory || loadingMoreCategoryId) {
       return;
     }
 
-    setProtectedImagesByCategory((current) => ({
-      ...current,
-      [category.id]: (data.images ?? []).map(normalizeImage),
-    }));
+    const currentPage = protectedImagePagesByCategory[selectedProtectedCategory.id] ?? 1;
+    void loadProtectedCategoryImages(selectedProtectedCategory, currentPage + 1);
   }
 
   if (isLoading) {
@@ -558,6 +593,7 @@ export default function AccessPage() {
                         <img
                           src={sticker.url}
                           alt=""
+                          loading="lazy"
                           className="max-h-full max-w-full object-contain transition group-hover:scale-105"
                         />
                       </div>
@@ -569,9 +605,31 @@ export default function AccessPage() {
                   ))}
                 </div>
 
-                {!selectedProtectedStickers.length ? (
+                {!selectedProtectedStickers.length && loadingMoreCategoryId === selectedProtectedCategory.id ? (
+                  <div className="rounded-lg border border-white/10 bg-black p-8 text-center text-sm text-zinc-400">
+                    <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
+                    Carregando figurinhas
+                  </div>
+                ) : null}
+
+                {!selectedProtectedStickers.length && loadingMoreCategoryId !== selectedProtectedCategory.id ? (
                   <div className="rounded-lg border border-white/10 bg-black p-8 text-center text-sm text-zinc-500">
                     Nenhuma figurinha disponivel para download nesta categoria.
+                  </div>
+                ) : null}
+
+                {hasMoreProtectedStickers ? (
+                  <div className="mt-5 flex justify-center">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="gap-2"
+                      onClick={handleLoadMoreProtectedStickers}
+                      disabled={loadingMoreCategoryId === selectedProtectedCategory.id}
+                    >
+                      {loadingMoreCategoryId === selectedProtectedCategory.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                      Carregar mais
+                    </Button>
                   </div>
                 ) : null}
               </div>
@@ -619,6 +677,20 @@ function normalizeImage(image: ProtectedStickerImage) {
     url: normalizeProtectedUrl(imageUrl) ?? '',
     downloadUrl: normalizeProtectedUrl(downloadUrl) ?? '',
   };
+}
+
+function mergeImagesById(current: ProtectedStickerImage[], next: ProtectedStickerImage[]) {
+  const seen = new Set(current.map((image) => image.id));
+  const uniqueNext = next.filter((image) => {
+    if (seen.has(image.id)) {
+      return false;
+    }
+
+    seen.add(image.id);
+    return true;
+  });
+
+  return [...current, ...uniqueNext];
 }
 
 function normalizeProtectedUrl(url?: string | null) {
