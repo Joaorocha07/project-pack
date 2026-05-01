@@ -17,7 +17,6 @@ import {
   sendAccessEmail,
   temporarilyDisableUser,
   resetUserDevice,
-  updateUserDevice,
   updateUserPassword,
   updateUserRole,
   type AdminUser,
@@ -37,7 +36,6 @@ export default function AdminUsersPage() {
   const [disableReasonByUser, setDisableReasonByUser] = useState<Record<string, string>>({});
   const [passwordByUser, setPasswordByUser] = useState<Record<string, string>>({});
   const [temporaryPasswordByUser, setTemporaryPasswordByUser] = useState<Record<string, boolean>>({});
-  const [deviceByUser, setDeviceByUser] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const totalUsers = users.length;
@@ -231,30 +229,6 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleDeviceChange(user: AdminUser) {
-    const deviceId = deviceByUser[user.id]?.trim();
-
-    if (!deviceId) {
-      setError('Informe o ID do aparelho.');
-      return;
-    }
-
-    setError('');
-    setSuccess('');
-    setBusyAction(`device-${user.id}`);
-
-    try {
-      const data = await updateUserDevice(user.id, deviceId);
-      applyUpdatedUser(data.user);
-      setDeviceByUser((current) => ({ ...current, [user.id]: '' }));
-      setSuccess(data.message || 'Aparelho atualizado.');
-    } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao alterar aparelho.');
-    } finally {
-      setBusyAction('');
-    }
-  }
-
   async function handleDeviceReset(user: AdminUser) {
     setError('');
     setSuccess('');
@@ -414,32 +388,15 @@ export default function AdminUsersPage() {
                       {user.profile?.deviceBoundAt ? (
                         <p className="mt-1 text-xs text-zinc-600">Vinculado em {formatDate(user.profile.deviceBoundAt)}</p>
                       ) : null}
-                      <Input
-                        value={deviceByUser[user.id] ?? ''}
-                        onChange={(event) => setDeviceByUser((current) => ({ ...current, [user.id]: event.target.value }))}
-                        className="mt-3 h-11 border-white/10 bg-zinc-950 text-white"
-                        placeholder="Novo deviceId"
-                      />
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        <Button
-                          variant="secondary"
-                          className="gap-2"
-                          onClick={() => handleDeviceChange(user)}
-                          disabled={busyAction === `device-${user.id}`}
-                        >
-                          {busyAction === `device-${user.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                          Alterar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="gap-2 border-white/15 bg-transparent text-white hover:bg-white/10"
-                          onClick={() => handleDeviceReset(user)}
-                          disabled={busyAction === `reset-device-${user.id}`}
-                        >
-                          {busyAction === `reset-device-${user.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          Resetar
-                        </Button>
-                      </div>
+                      <Button
+                        variant="secondary"
+                        className="mt-4 w-full gap-2"
+                        onClick={() => handleDeviceReset(user)}
+                        disabled={!user.profile?.deviceBound || busyAction === `reset-device-${user.id}`}
+                      >
+                        {busyAction === `reset-device-${user.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        Resetar aparelho
+                      </Button>
                     </section>
 
                     <section className="rounded-lg border border-white/10 bg-black p-4">

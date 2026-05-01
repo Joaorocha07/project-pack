@@ -300,13 +300,6 @@ export async function updateUserPassword(userId: string, password: string, tempo
   }, 'Nao foi possivel alterar a senha do perfil.');
 }
 
-export async function updateUserDevice(userId: string, deviceId: string) {
-  return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/device`, {
-    method: 'PATCH',
-    body: JSON.stringify({ deviceId }),
-  }, 'Nao foi possivel alterar o aparelho do perfil.');
-}
-
 export async function resetUserDevice(userId: string) {
   return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/device`, {
     method: 'DELETE',
