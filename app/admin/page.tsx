@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowRight, CheckCircle2, DownloadCloud, FolderPlus, ImagePlus, Loader2, LogOut, Pencil, RefreshCw, Star, Trash2, Upload, Users, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, DownloadCloud, FolderPlus, ImagePlus, Loader2, LogOut, Pencil, RefreshCw, Star, Trash2, Upload, Users, X } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const emptySummary: ImportCaktoSummary = {
   skipped: 0,
   emailsSent: 0,
 };
+const IMAGES_PER_PAGE = 24;
 
 type StickerCategory = {
   id: string;
@@ -60,11 +61,15 @@ export default function AdminPage() {
   const [editingImageId, setEditingImageId] = useState('');
   const [editingImageName, setEditingImageName] = useState('');
   const [busyAction, setBusyAction] = useState('');
+  const [imagePage, setImagePage] = useState(1);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const selectedUploadCategory = stickerCategories.find((category) => category.id === stickerCategory);
   const managedCategory = stickerCategories.find((category) => category.id === managedCategoryId);
   const selectedFolderSize = stickerFiles.reduce((total, file) => total + file.size, 0);
+  const totalImagePages = Math.max(1, Math.ceil(managedImages.length / IMAGES_PER_PAGE));
+  const currentImagePage = Math.min(imagePage, totalImagePages);
+  const paginatedManagedImages = managedImages.slice((currentImagePage - 1) * IMAGES_PER_PAGE, currentImagePage * IMAGES_PER_PAGE);
 
   useEffect(() => {
     if (!error && !success) {
@@ -212,6 +217,7 @@ export default function AdminPage() {
       );
 
       setManagedImages((data.images ?? []).map(normalizeStickerImage));
+      setImagePage(1);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao carregar figurinhas.');
     } finally {
@@ -227,6 +233,7 @@ export default function AdminPage() {
     setEditCategoryDescription(category?.description ?? '');
     setEditingImageId('');
     setEditingImageName('');
+    setImagePage(1);
     void loadManagedCategoryImages(categoryId);
   }
 
@@ -864,7 +871,9 @@ export default function AdminPage() {
             <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">Figurinhas da categoria</h4>
-                <span className="text-xs text-zinc-500">{managedImages.length} carregadas</span>
+                <span className="text-xs text-zinc-500">
+                  {managedImages.length ? `${(currentImagePage - 1) * IMAGES_PER_PAGE + 1}-${Math.min(currentImagePage * IMAGES_PER_PAGE, managedImages.length)} de ${managedImages.length}` : '0 carregadas'}
+                </span>
               </div>
 
               {isLoadingManagedImages ? (
@@ -874,7 +883,7 @@ export default function AdminPage() {
                 </div>
               ) : managedImages.length ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {managedImages.map((image) => {
+                  {paginatedManagedImages.map((image) => {
                     const isCover = managedCategory?.coverImageId === image.id || managedCategory?.coverUrl === image.url;
                     const isEditing = editingImageId === image.id;
 
@@ -913,13 +922,13 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 border-t border-white/10 bg-zinc-950/70 p-3">
+                        <div className="grid grid-cols-3 gap-2 border-t border-white/10 bg-zinc-950/70 p-3">
                           {isEditing ? (
                             <>
                               <Button
                                 type="button"
                                 size="sm"
-                                className="gap-2"
+                                className="col-span-2 gap-2"
                                 onClick={() => handleRenameImage(image.id)}
                                 disabled={busyAction === `rename-${image.id}`}
                               >
@@ -930,6 +939,7 @@ export default function AdminPage() {
                                 type="button"
                                 size="sm"
                                 variant="secondary"
+                                className="px-2"
                                 onClick={() => {
                                   setEditingImageId('');
                                   setEditingImageName('');
@@ -951,7 +961,7 @@ export default function AdminPage() {
                                 }}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
-                                Nome
+                                <span className="hidden sm:inline">Nome</span>
                               </Button>
                               <Button
                                 type="button"
@@ -962,18 +972,18 @@ export default function AdminPage() {
                                 disabled={busyAction === `cover-${image.id}` || isCover}
                               >
                                 {busyAction === `cover-${image.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
-                                Capa
+                                <span className="hidden sm:inline">Capa</span>
                               </Button>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="destructive"
-                                className="col-span-2 gap-2"
+                                className="gap-2"
                                 onClick={() => handleDeleteImage(image)}
                                 disabled={busyAction === `delete-${image.id}`}
                               >
                                 {busyAction === `delete-${image.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                                Excluir figurinha
+                                <span className="hidden sm:inline">Excluir</span>
                               </Button>
                             </>
                           )}
@@ -987,6 +997,38 @@ export default function AdminPage() {
                   Selecione uma categoria e atualize para carregar as figurinhas.
                 </div>
               )}
+
+              {managedImages.length > IMAGES_PER_PAGE ? (
+                <div className="mt-5 flex flex-col gap-3 rounded-lg border border-white/10 bg-black p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-zinc-400">
+                    Pagina {currentImagePage} de {totalImagePages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setImagePage((page) => Math.max(1, page - 1))}
+                      disabled={currentImagePage <= 1}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setImagePage((page) => Math.min(totalImagePages, page + 1))}
+                      disabled={currentImagePage >= totalImagePages}
+                    >
+                      Proxima
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
