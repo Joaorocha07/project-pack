@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { API_BASE_URL, SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from '@/lib/session';
+import { API_BASE_URL, DEVICE_COOKIE, SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from '@/lib/session';
 
 type RouteContext = {
   params: {
@@ -12,6 +12,7 @@ async function handler(request: NextRequest, context: RouteContext) {
   const path = `/${context.params.path.join('/')}`;
   const backendUrl = `${API_BASE_URL}${path}${request.nextUrl.search}`;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const deviceId = request.headers.get('x-device-id') ?? request.cookies.get(DEVICE_COOKIE)?.value;
 
   if (path === '/auth/logout') {
     if (token) {
@@ -20,6 +21,7 @@ async function handler(request: NextRequest, context: RouteContext) {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
+          ...(deviceId ? { 'x-device-id': deviceId } : {}),
         },
         cache: 'no-store',
       }).catch(() => null);
@@ -42,6 +44,10 @@ async function handler(request: NextRequest, context: RouteContext) {
 
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  if (deviceId) {
+    headers.set('x-device-id', deviceId);
   }
 
   const backendResponse = await fetch(backendUrl, {
@@ -78,6 +84,15 @@ async function handler(request: NextRequest, context: RouteContext) {
 
   if (path === '/auth/login' && backendResponse.ok && isObject(data) && typeof data.token === 'string') {
     response.cookies.set(SESSION_COOKIE, data.token, SESSION_COOKIE_OPTIONS);
+  }
+
+  if (deviceId) {
+    response.cookies.set(DEVICE_COOKIE, deviceId, {
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+    });
   }
 
   if (backendResponse.status === 401) {

@@ -1,5 +1,6 @@
 export const API_BASE_URL = 'https://pack-do-criador-back-end.onrender.com';
 export const SESSION_COOKIE = 'pack_session';
+export const DEVICE_COOKIE = 'deviceId';
 
 export const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
