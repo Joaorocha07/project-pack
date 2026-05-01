@@ -17,6 +17,7 @@ const emptySummary: ImportCaktoSummary = {
   emailsSent: 0,
 };
 const IMAGES_PER_PAGE = 24;
+const VERCEL_SAFE_UPLOAD_BYTES = Math.floor(3.8 * 1024 * 1024);
 
 type StickerCategory = {
   id: string;
@@ -62,6 +63,7 @@ export default function AdminPage() {
   const [editingImageName, setEditingImageName] = useState('');
   const [busyAction, setBusyAction] = useState('');
   const [imagePage, setImagePage] = useState(1);
+  const [uploadProgress, setUploadProgress] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const selectedUploadCategory = stickerCategories.find((category) => category.id === stickerCategory);
@@ -340,38 +342,30 @@ export default function AdminPage() {
 
     const normalizedFiles = normalizeStickerUploadFiles(stickerFiles);
 
+    console.log(normalizedFiles)
+
     if (!normalizedFiles.ok) {
       setError(normalizedFiles.error);
       return;
     }
 
-    const formData = new FormData();
-    for (const file of normalizedFiles.files) {
-      formData.append('files', file);
-    }
+    const batches = splitFilesForVercel(normalizedFiles.files);
 
     setIsUploadingSticker(true);
 
     try {
-      const response = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(stickerCategory)}/images`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      const data = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        uploaded?: number;
-        category?: StickerCategory;
-      };
+      let uploaded = 0;
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Nao foi possivel enviar a figurinha.');
+      for (let index = 0; index < batches.length; index += 1) {
+        setUploadProgress(`Enviando lote ${index + 1} de ${batches.length}...`);
+        const data = await uploadStickerBatch(stickerCategory, batches[index]);
+        uploaded += data.uploaded ?? batches[index].length;
       }
 
       setStickerFiles([]);
       setSuccess(
-        data.uploaded && data.uploaded > 1
-          ? `${data.uploaded} figurinhas enviadas com seguranca para a area protegida.`
+        uploaded > 1
+          ? `${uploaded} figurinhas enviadas com seguranca para a area protegida.`
           : 'Figurinha enviada com seguranca para a area protegida.'
       );
       await loadStickerCategories();
@@ -381,7 +375,34 @@ export default function AdminPage() {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao enviar figurinha.');
     } finally {
       setIsUploadingSticker(false);
+      setUploadProgress('');
     }
+  }
+
+  async function uploadStickerBatch(categoryId: string, files: File[]) {
+    const formData = new FormData();
+
+    for (const file of files) {
+      formData.append('files', file, file.name);
+    }
+
+    const response = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(categoryId)}/images`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    const data = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      message?: string;
+      uploaded?: number;
+      category?: StickerCategory;
+    };
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || `Nao foi possivel enviar a figurinha. Status ${response.status}.`);
+    }
+
+    return data;
   }
 
   async function handleUpdateCategory(event: FormEvent<HTMLFormElement>) {
@@ -742,7 +763,7 @@ export default function AdminPage() {
                   />
                   <div className="mt-3 flex flex-col gap-1 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
                     <span>
-                      {stickerFiles.length ? `${stickerFiles.length} arquivos selecionados` : 'Escolha uma pasta apenas com arquivos PNG.'}
+                      {uploadProgress || (stickerFiles.length ? `${stickerFiles.length} arquivos selecionados` : 'Escolha uma pasta apenas com arquivos PNG.')}
                     </span>
                     {stickerFiles.length ? <span>{formatFileSize(selectedFolderSize)}</span> : null}
                   </div>
@@ -752,7 +773,7 @@ export default function AdminPage() {
 
             <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs leading-5 text-zinc-500">
-                O envio remove subpastas, aceita apenas PNG e renomeia em sequencia: 1.png, 2.png, 3.png...
+                O envio remove subpastas, aceita apenas PNG, renomeia em sequencia e divide em lotes seguros para a Vercel.
               </p>
               <Button type="submit" className="h-11 gap-2 px-5" disabled={isUploadingSticker || !stickerCategories.length}>
                 {isUploadingSticker ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -1137,6 +1158,33 @@ function normalizeStickerUploadFiles(files: File[]) {
       lastModified: file.lastModified,
     })),
   };
+}
+
+function splitFilesForVercel(files: File[]) {
+  const batches: File[][] = [];
+  let batch: File[] = [];
+  let size = 0;
+
+  for (const file of files) {
+    if (file.size >= VERCEL_SAFE_UPLOAD_BYTES) {
+      throw new Error(`O arquivo ${file.name} passa de 3.8MB. Comprima antes de enviar.`);
+    }
+
+    if (batch.length && size + file.size > VERCEL_SAFE_UPLOAD_BYTES) {
+      batches.push(batch);
+      batch = [];
+      size = 0;
+    }
+
+    batch.push(file);
+    size += file.size;
+  }
+
+  if (batch.length) {
+    batches.push(batch);
+  }
+
+  return batches;
 }
 
 function isPngFile(file: File) {
