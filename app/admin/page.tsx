@@ -18,6 +18,7 @@ const emptySummary: ImportCaktoSummary = {
 };
 const IMAGES_PER_PAGE = 24;
 const VERCEL_SAFE_UPLOAD_BYTES = Math.floor(3.8 * 1024 * 1024);
+const MAX_STICKER_IMAGE_DIMENSION = 1600;
 
 type StickerCategory = {
   id: string;
@@ -352,7 +353,11 @@ export default function AdminPage() {
     setIsUploadingSticker(true);
 
     try {
-      const batches = splitFilesForVercel(normalizedFiles.files);
+      setUploadProgress('Otimizando imagens antes do envio...');
+      const optimizedFiles = await optimizePngFiles(normalizedFiles.files, (current, total) => {
+        setUploadProgress(`Otimizando imagem ${current} de ${total}...`);
+      });
+      const batches = splitFilesForVercel(optimizedFiles);
       let uploaded = 0;
 
       for (let index = 0; index < batches.length; index += 1) {
@@ -1180,6 +1185,62 @@ function splitFilesForVercel(files: File[]) {
   }
 
   return batches;
+}
+
+async function optimizePngFiles(files: File[], onProgress: (current: number, total: number) => void) {
+  const optimizedFiles: File[] = [];
+
+  for (let index = 0; index < files.length; index += 1) {
+    onProgress(index + 1, files.length);
+    optimizedFiles.push(await optimizePngFile(files[index]));
+  }
+
+  return optimizedFiles;
+}
+
+async function optimizePngFile(file: File) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_STICKER_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d', {
+      alpha: true,
+      willReadFrequently: false,
+    });
+
+    if (!context) {
+      bitmap.close();
+      return file;
+    }
+
+    context.clearRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await canvasToBlob(canvas, 'image/png');
+
+    if (!blob || blob.size >= file.size) {
+      return file;
+    }
+
+    return new File([blob], file.name, {
+      type: 'image/png',
+      lastModified: file.lastModified,
+    });
+  } catch {
+    return file;
+  }
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string) {
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), type);
+  });
 }
 
 function isPngFile(file: File) {
