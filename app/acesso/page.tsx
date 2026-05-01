@@ -53,6 +53,29 @@ type ProductCategory = {
   accent: string;
 };
 
+type ProtectedStickerImage = {
+  id: string;
+  name: string;
+  originalName?: string;
+  mimeType?: string;
+  size?: number;
+  url: string;
+  downloadUrl: string;
+};
+
+type ProtectedStickerCategory = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  totalStickers: number;
+  coverUrl: string | null;
+  coverImageUrl?: string | null;
+  coverImage?: {
+    url?: string | null;
+  } | null;
+};
+
 const productCategories: ProductCategory[] = [
   {
     id: 'acessorios',
@@ -153,6 +176,9 @@ export default function AccessPage() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [selectedProtectedCategory, setSelectedProtectedCategory] = useState<ProtectedStickerCategory | null>(null);
+  const [protectedImagesByCategory, setProtectedImagesByCategory] = useState<Record<string, ProtectedStickerImage[]>>({});
+  const [protectedCategories, setProtectedCategories] = useState<ProtectedStickerCategory[]>([]);
 
   const filteredCategories = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -165,6 +191,27 @@ export default function AccessPage() {
       `${category.title} ${category.description}`.toLowerCase().includes(normalizedQuery)
     );
   }, [query]);
+
+  const filteredProtectedCategories = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const categories = protectedCategories;
+
+    if (!normalizedQuery) {
+      return categories;
+    }
+
+    return categories.filter((category) =>
+      `${category.title} ${category.description}`.toLowerCase().includes(normalizedQuery)
+    );
+  }, [protectedCategories, query]);
+
+  const selectedProtectedStickers = useMemo(() => {
+    if (!selectedProtectedCategory) {
+      return [];
+    }
+
+    return protectedImagesByCategory[selectedProtectedCategory.id] ?? [];
+  }, [protectedImagesByCategory, selectedProtectedCategory]);
 
   useEffect(() => {
     let isMounted = true;
@@ -188,6 +235,23 @@ export default function AccessPage() {
         }
 
         setUser(currentUser);
+
+        const stickersResponse = await fetch('/api/stickers/categories', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const stickersData = (await stickersResponse.json().catch(() => ({}))) as {
+          categories?: ProtectedStickerCategory[];
+          error?: string;
+        };
+
+        if (!stickersResponse.ok) {
+          throw new Error(stickersData.error || 'Nao foi possivel carregar as figurinhas protegidas.');
+        }
+
+        if (isMounted) {
+          setProtectedCategories((stickersData.categories ?? []).map(normalizeCategory));
+        }
       } catch {
         if (isMounted) {
           router.replace('/login');
@@ -209,6 +273,32 @@ export default function AccessPage() {
   async function handleLogout() {
     await clearSession();
     router.replace('/login');
+  }
+
+  async function openProtectedCategory(category: ProtectedStickerCategory) {
+    setSelectedProtectedCategory(category);
+
+    if (protectedImagesByCategory[category.id]) {
+      return;
+    }
+
+    const response = await fetch(`/api/stickers/categories/${encodeURIComponent(category.id)}/images`, {
+      credentials: 'include',
+    });
+    const data = (await response.json().catch(() => ({}))) as {
+      images?: ProtectedStickerImage[];
+      error?: string;
+    };
+
+    if (!response.ok) {
+      setError(data.error || 'Nao foi possivel carregar as figurinhas da categoria.');
+      return;
+    }
+
+    setProtectedImagesByCategory((current) => ({
+      ...current,
+      [category.id]: (data.images ?? []).map(normalizeImage),
+    }));
   }
 
   if (isLoading) {
@@ -306,60 +396,52 @@ export default function AccessPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredCategories.map((category) => (
+          {filteredProtectedCategories.map((category) => (
             <article key={category.id} className="overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
               <button
                 type="button"
                 className="group block w-full text-left"
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => openProtectedCategory(category)}
               >
-                <div className="relative aspect-[108/159] overflow-hidden bg-zinc-900">
-                  <Image
-                    src={category.cover}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition duration-300 group-hover:scale-105"
-                    placeholder="blur"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-transparent" />
-                  <div className={`absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-md ${category.accent}`}>
+                <div className="relative aspect-[108/159] overflow-hidden bg-black">
+                  {category.coverUrl ? (
+                    <img
+                      src={category.coverUrl}
+                      alt=""
+                      className="h-full w-full object-contain p-6 transition duration-300 group-hover:scale-105"
+                      onError={(event) => {
+                        event.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/10 to-transparent" />
+                  <div className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-md bg-emerald-400 text-black">
                     <Folder className="h-5 w-5" />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-300">{category.count}</p>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-300">
+                      {category.totalStickers} figurinhas
+                    </p>
                     <h4 className="mt-1 text-xl font-semibold text-white">{category.title}</h4>
-                    <p className="mt-2 line-clamp-2 text-sm leading-5 text-zinc-300">{category.description}</p>
+                    <p className="mt-2 line-clamp-2 text-sm leading-5 text-zinc-300">
+                      {category.description || 'Pack de figurinhas protegido.'}
+                    </p>
                   </div>
                 </div>
               </button>
 
               <div className="space-y-3 p-3">
-                <div className="flex items-center -space-x-2">
-                  {category.previews.slice(0, 4).map((preview, index) => (
-                    <div key={`${category.id}-${index}`} className="relative h-9 w-9 overflow-hidden rounded-md border border-black bg-zinc-900">
-                      <Image src={preview} alt="" fill sizes="36px" className="object-cover" placeholder="blur" />
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="secondary" className="gap-2" onClick={() => setSelectedCategory(category)}>
-                    <Eye className="h-4 w-4" />
-                    Ver
-                  </Button>
-                  <Button asChild className="gap-2">
-                    <a href={category.cover.src} download>
-                      <Download className="h-4 w-4" />
-                      Baixar
-                    </a>
-                  </Button>
-                </div>
+                <Button variant="secondary" className="w-full gap-2" onClick={() => openProtectedCategory(category)}>
+                  <Eye className="h-4 w-4" />
+                  Ver figurinhas
+                </Button>
               </div>
             </article>
           ))}
+
         </div>
 
-        {!filteredCategories.length ? (
+        {!filteredProtectedCategories.length ? (
           <div className="mt-10 rounded-lg border border-white/10 bg-zinc-950 p-8 text-center">
             <Sparkles className="mx-auto h-8 w-8 text-zinc-500" />
             <p className="mt-3 text-sm text-zinc-400">Nenhuma categoria encontrada para essa busca.</p>
@@ -423,6 +505,78 @@ export default function AccessPage() {
           </DialogContent>
         ) : null}
       </Dialog>
+
+      <Dialog open={Boolean(selectedProtectedCategory)} onOpenChange={(open) => !open && setSelectedProtectedCategory(null)}>
+        {selectedProtectedCategory ? (
+          <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto border-white/10 bg-zinc-950 p-5 text-white sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="text-2xl text-white">{selectedProtectedCategory.title}</DialogTitle>
+              <DialogDescription className="leading-6 text-zinc-400">
+                {selectedProtectedCategory.description || `${selectedProtectedCategory.totalStickers} figurinhas disponiveis para baixar.`}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {selectedProtectedStickers.map((sticker) => (
+                <a
+                  key={sticker.id}
+                  href={sticker.downloadUrl}
+                  download
+                  className="group overflow-hidden rounded-md border border-white/10 bg-black"
+                >
+                  <div className="flex aspect-square items-center justify-center p-4">
+                    <img
+                      src={sticker.url}
+                      alt=""
+                      className="max-h-full max-w-full object-contain transition group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 border-t border-white/10 p-3">
+                    <span className="truncate text-xs text-zinc-300">{sticker.name}</span>
+                    <Download className="h-4 w-4 shrink-0 text-zinc-400" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </main>
   );
+}
+
+function normalizeCategory(category: ProtectedStickerCategory) {
+  const coverUrl = category.coverUrl ?? category.coverImageUrl ?? category.coverImage?.url ?? null;
+  const totalStickers = Number(
+    (category as ProtectedStickerCategory & { count?: number }).totalStickers ??
+    (category as ProtectedStickerCategory & { count?: number }).count ??
+    0
+  );
+
+  return {
+    ...category,
+    totalStickers,
+    coverUrl: normalizeProtectedUrl(coverUrl),
+  };
+}
+
+function normalizeImage(image: ProtectedStickerImage) {
+  return {
+    ...image,
+    name: image.name || image.originalName || 'figurinha',
+    url: normalizeProtectedUrl(image.url) ?? '',
+    downloadUrl: normalizeProtectedUrl(image.downloadUrl) ?? '',
+  };
+}
+
+function normalizeProtectedUrl(url?: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/api/')) {
+    return url;
+  }
+
+  return url.startsWith('/') ? `/api${url}` : `/api/${url}`;
 }

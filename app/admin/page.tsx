@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, DownloadCloud, Loader2, LogOut, RefreshCw, Users } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, DownloadCloud, FolderPlus, ImagePlus, Loader2, LogOut, Pencil, RefreshCw, Star, Trash2, Upload, Users, X } from 'lucide-react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { clearSession, getMe, importCaktoPurchases, isAdminRole, type ImportCaktoSummary, type User } from '@/lib/auth';
 
 const emptySummary: ImportCaktoSummary = {
@@ -16,14 +17,67 @@ const emptySummary: ImportCaktoSummary = {
   emailsSent: 0,
 };
 
+type StickerCategory = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  totalStickers: number;
+  coverImageId?: string | null;
+  coverUrl: string | null;
+};
+
+type StickerImage = {
+  id: string;
+  name: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  downloadUrl: string;
+  createdAt: string;
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [admin, setAdmin] = useState<User | null>(null);
   const [summary, setSummary] = useState<ImportCaktoSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
+  const [isUploadingSticker, setIsUploadingSticker] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [stickerCategory, setStickerCategory] = useState('acessorios');
+  const [stickerCategories, setStickerCategories] = useState<StickerCategory[]>([]);
+  const [newCategoryTitle, setNewCategoryTitle] = useState('');
+  const [newCategoryDescription, setNewCategoryDescription] = useState('');
+  const [newCategoryCover, setNewCategoryCover] = useState<File | null>(null);
+  const [stickerFiles, setStickerFiles] = useState<File[]>([]);
+  const [managedCategoryId, setManagedCategoryId] = useState('');
+  const [managedImages, setManagedImages] = useState<StickerImage[]>([]);
+  const [isLoadingManagedImages, setIsLoadingManagedImages] = useState(false);
+  const [editCategoryTitle, setEditCategoryTitle] = useState('');
+  const [editCategoryDescription, setEditCategoryDescription] = useState('');
+  const [editingImageId, setEditingImageId] = useState('');
+  const [editingImageName, setEditingImageName] = useState('');
+  const [busyAction, setBusyAction] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const selectedUploadCategory = stickerCategories.find((category) => category.id === stickerCategory);
+  const managedCategory = stickerCategories.find((category) => category.id === managedCategoryId);
+  const selectedFolderSize = stickerFiles.reduce((total, file) => total + file.size, 0);
+
+  useEffect(() => {
+    if (!error && !success) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setError('');
+      setSuccess('');
+    }, 6000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [error, success]);
 
   useEffect(() => {
     let isMounted = true;
@@ -47,6 +101,7 @@ export default function AdminPage() {
         }
 
         setAdmin(currentUser);
+        await loadStickerCategories();
       } catch {
         if (isMounted) {
           router.replace('/login');
@@ -83,6 +138,394 @@ export default function AdminPage() {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao importar compradores.');
     } finally {
       setIsImporting(false);
+    }
+  }
+
+  async function loadStickerCategories() {
+    const response = await fetch('/api/admin/stickers/categories', {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    const data = (await response.json().catch(() => ({}))) as {
+      categories?: StickerCategory[];
+    };
+
+    if (response.ok) {
+      const categories = (data.categories ?? []).map(normalizeStickerCategory);
+      setStickerCategories(categories);
+
+      if (categories.length) {
+        setStickerCategory((current) => categories.some((category) => category.id === current) ? current : categories[0].id);
+        setManagedCategoryId((current) => categories.some((category) => category.id === current) ? current : categories[0].id);
+
+        const currentManagedCategory = categories.find((category) => category.id === managedCategoryId) ?? categories[0];
+        setEditCategoryTitle((current) => current || currentManagedCategory.title);
+        setEditCategoryDescription((current) => current || currentManagedCategory.description);
+
+        if (!managedImages.length) {
+          void loadManagedCategoryImages(currentManagedCategory.id);
+        }
+      } else {
+        setStickerCategory('');
+        setManagedCategoryId('');
+        setManagedImages([]);
+        setEditCategoryTitle('');
+        setEditCategoryDescription('');
+      }
+    }
+  }
+
+  async function requestJson<T>(url: string, options: RequestInit = {}, fallback = 'Nao foi possivel concluir a acao.') {
+    const headers = new Headers(options.headers);
+
+    if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers,
+    });
+    const data = (await response.json().catch(() => ({}))) as T & { error?: string; message?: string };
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || `${fallback} Status ${response.status}.`);
+    }
+
+    return data;
+  }
+
+  async function loadManagedCategoryImages(categoryId = managedCategoryId) {
+    if (!categoryId) {
+      setManagedImages([]);
+      return;
+    }
+
+    setIsLoadingManagedImages(true);
+
+    try {
+      const data = await requestJson<{ images?: StickerImage[] }>(
+        `/api/stickers/categories/${encodeURIComponent(categoryId)}/images`,
+        { cache: 'no-store' },
+        'Nao foi possivel carregar as figurinhas.'
+      );
+
+      setManagedImages((data.images ?? []).map(normalizeStickerImage));
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao carregar figurinhas.');
+    } finally {
+      setIsLoadingManagedImages(false);
+    }
+  }
+
+  function handleManagedCategoryChange(categoryId: string) {
+    const category = stickerCategories.find((item) => item.id === categoryId);
+
+    setManagedCategoryId(categoryId);
+    setEditCategoryTitle(category?.title ?? '');
+    setEditCategoryDescription(category?.description ?? '');
+    setEditingImageId('');
+    setEditingImageName('');
+    void loadManagedCategoryImages(categoryId);
+  }
+
+  async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+
+    setError('');
+    setSuccess('');
+    setIsCreatingCategory(true);
+
+    try {
+      const response = await fetch('/api/admin/stickers/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          title: newCategoryTitle,
+          description: newCategoryDescription,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        category?: StickerCategory;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Nao foi possivel criar a categoria.');
+      }
+
+      if (newCategoryCover && data.category?.id) {
+        const coverFormData = new FormData();
+        coverFormData.append('files', newCategoryCover);
+
+        const uploadResponse = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(data.category.id)}/images`, {
+          method: 'POST',
+          body: coverFormData,
+          credentials: 'include',
+        });
+        const uploadData = (await uploadResponse.json().catch(() => ({}))) as {
+          error?: string;
+          images?: Array<{ id: string }>;
+        };
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadData.error || 'Categoria criada, mas nao foi possivel enviar a capa.');
+        }
+
+        const coverImageId = uploadData.images?.[0]?.id;
+
+        if (coverImageId) {
+          const coverResponse = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(data.category.id)}/cover`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ imageId: coverImageId }),
+          });
+          const coverData = (await coverResponse.json().catch(() => ({}))) as { error?: string };
+
+          if (!coverResponse.ok) {
+            throw new Error(coverData.error || 'Capa enviada, mas nao foi possivel vincular ao card.');
+          }
+        }
+      }
+
+      setNewCategoryTitle('');
+      setNewCategoryDescription('');
+      setNewCategoryCover(null);
+      setSuccess('Categoria criada e pronta para receber figurinhas.');
+      await loadStickerCategories();
+      form.reset();
+
+      if (data.category?.id) {
+        setStickerCategory(data.category.id);
+        handleManagedCategoryChange(data.category.id);
+      }
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao criar categoria.');
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  }
+
+  async function handleStickerUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+
+    setError('');
+    setSuccess('');
+
+    if (!stickerFiles.length) {
+      setError('Selecione uma pasta com figurinhas para enviar.');
+      return;
+    }
+
+    if (!stickerCategories.length) {
+      setError('Crie uma categoria antes de enviar figurinhas.');
+      return;
+    }
+
+    const normalizedFiles = normalizeStickerUploadFiles(stickerFiles);
+
+    if (!normalizedFiles.ok) {
+      setError(normalizedFiles.error);
+      return;
+    }
+
+    const formData = new FormData();
+    for (const file of normalizedFiles.files) {
+      formData.append('files', file);
+    }
+
+    setIsUploadingSticker(true);
+
+    try {
+      const response = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(stickerCategory)}/images`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        uploaded?: number;
+        category?: StickerCategory;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Nao foi possivel enviar a figurinha.');
+      }
+
+      setStickerFiles([]);
+      setSuccess(
+        data.uploaded && data.uploaded > 1
+          ? `${data.uploaded} figurinhas enviadas com seguranca para a area protegida.`
+          : 'Figurinha enviada com seguranca para a area protegida.'
+      );
+      await loadStickerCategories();
+      await loadManagedCategoryImages(stickerCategory);
+      form.reset();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao enviar figurinha.');
+    } finally {
+      setIsUploadingSticker(false);
+    }
+  }
+
+  async function handleUpdateCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!managedCategoryId) {
+      setError('Selecione uma categoria para editar.');
+      return;
+    }
+
+    setBusyAction('update-category');
+    setError('');
+    setSuccess('');
+
+    try {
+      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: editCategoryTitle,
+          description: editCategoryDescription,
+        }),
+      }, 'Nao foi possivel atualizar a categoria.');
+      setSuccess('Categoria atualizada.');
+      await loadStickerCategories();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao atualizar categoria.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
+  async function handleDeleteCategory() {
+    if (!managedCategoryId || !managedCategory) {
+      return;
+    }
+
+    if (!window.confirm(`Excluir a categoria "${managedCategory.title}"? Essa acao nao pode ser desfeita.`)) {
+      return;
+    }
+
+    setBusyAction('delete-category');
+    setError('');
+    setSuccess('');
+
+    try {
+      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}`, {
+        method: 'DELETE',
+      }, 'Nao foi possivel excluir a categoria.');
+      setSuccess('Categoria excluida.');
+      setManagedImages([]);
+      setManagedCategoryId('');
+      await loadStickerCategories();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao excluir categoria.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
+  async function handleSetCover(imageId: string) {
+    if (!managedCategoryId) {
+      return;
+    }
+
+    setBusyAction(`cover-${imageId}`);
+    setError('');
+    setSuccess('');
+
+    try {
+      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}/cover`, {
+        method: 'PUT',
+        body: JSON.stringify({ imageId }),
+      }, 'Nao foi possivel definir a capa.');
+      setSuccess('Capa atualizada.');
+      await loadStickerCategories();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao definir capa.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
+  async function handleRemoveCover() {
+    if (!managedCategoryId) {
+      return;
+    }
+
+    setBusyAction('remove-cover');
+    setError('');
+    setSuccess('');
+
+    try {
+      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}/cover`, {
+        method: 'DELETE',
+      }, 'Nao foi possivel remover a capa.');
+      setSuccess('Capa removida.');
+      await loadStickerCategories();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao remover capa.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
+  async function handleRenameImage(imageId: string) {
+    const name = editingImageName.trim();
+
+    if (!name) {
+      setError('Informe o novo nome da figurinha.');
+      return;
+    }
+
+    setBusyAction(`rename-${imageId}`);
+    setError('');
+    setSuccess('');
+
+    try {
+      await requestJson(`/api/admin/stickers/images/${encodeURIComponent(imageId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      }, 'Nao foi possivel renomear a figurinha.');
+      setSuccess('Figurinha renomeada.');
+      setEditingImageId('');
+      setEditingImageName('');
+      await loadManagedCategoryImages();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao renomear figurinha.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
+  async function handleDeleteImage(image: StickerImage) {
+    if (!window.confirm(`Excluir a figurinha "${image.name}"?`)) {
+      return;
+    }
+
+    setBusyAction(`delete-${image.id}`);
+    setError('');
+    setSuccess('');
+
+    try {
+      await requestJson(`/api/admin/stickers/images/${encodeURIComponent(image.id)}`, {
+        method: 'DELETE',
+      }, 'Nao foi possivel excluir a figurinha.');
+      setSuccess('Figurinha excluida.');
+      await Promise.all([loadManagedCategoryImages(), loadStickerCategories()]);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao excluir figurinha.');
+    } finally {
+      setBusyAction('');
     }
   }
 
@@ -127,18 +570,6 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        {error ? (
-          <Alert variant="destructive" className="mb-6 border-red-500/30 bg-red-500/10">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
-
-        {success ? (
-          <Alert className="mb-6 border-emerald-500/30 bg-emerald-500/10 text-emerald-100">
-            <AlertDescription>{success}</AlertDescription>
-          </Alert>
-        ) : null}
-
         <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-lg border border-white/10 bg-zinc-950 p-6">
             <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-md bg-white text-black">
@@ -172,7 +603,451 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+
+        <form onSubmit={handleCreateCategory} className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+          <div className="border-b border-white/10 p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white text-black">
+                  <FolderPlus className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Criar categoria de figurinhas</h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                    Cadastre o card que aparece na area do usuario. Depois envie uma pasta de figurinhas para essa categoria.
+                  </p>
+                </div>
+              </div>
+              <span className="w-fit rounded-full border border-white/10 bg-black px-3 py-1 text-xs font-medium text-zinc-400">
+                Card da vitrine
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-5 p-5 sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-300">Nome do card</span>
+                <Input
+                  value={newCategoryTitle}
+                  onChange={(event) => setNewCategoryTitle(event.target.value)}
+                  className="h-11 border-white/10 bg-black text-white placeholder:text-zinc-600"
+                  placeholder="Acessorios"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-300">Descricao</span>
+                <Input
+                  value={newCategoryDescription}
+                  onChange={(event) => setNewCategoryDescription(event.target.value)}
+                  className="h-11 border-white/10 bg-black text-white placeholder:text-zinc-600"
+                  placeholder="Figurinhas para stories de moda e beleza"
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-300">Capa do card</span>
+                <div className="rounded-lg border border-dashed border-white/15 bg-black p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white/10 text-zinc-300">
+                      <ImagePlus className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        type="file"
+                        accept="image/png,image/webp,image/jpeg"
+                        onChange={(event) => setNewCategoryCover(event.target.files?.[0] ?? null)}
+                        className="h-11 border-white/10 bg-zinc-950 text-white file:mr-4 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-black"
+                      />
+                      <p className="mt-2 truncate text-xs text-zinc-500">
+                        {newCategoryCover ? `${newCategoryCover.name} - ${formatFileSize(newCategoryCover.size)}` : 'PNG, JPG ou WebP. Se nao escolher, o backend pode usar a primeira figurinha como capa.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </label>
+
+              <Button type="submit" className="h-11 gap-2 px-5" disabled={isCreatingCategory}>
+                {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
+                Criar card
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <form onSubmit={handleStickerUpload} className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+          <div className="border-b border-white/10 p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-400 text-black">
+                  <Upload className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Enviar figurinhas protegidas</h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                    Selecione uma categoria e envie uma pasta com imagens. Os arquivos ficam protegidos pelo backend.
+                  </p>
+                </div>
+              </div>
+              <span className="w-fit rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                {stickerCategories.length} categorias
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-5 p-5 sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-300">Categoria</span>
+                <select
+                  value={stickerCategory}
+                  onChange={(event) => setStickerCategory(event.target.value)}
+                  className="flex h-11 w-full rounded-md border border-white/10 bg-black px-3 py-2 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {stickerCategories.length ? (
+                    stickerCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.title}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="acessorios">Crie uma categoria primeiro</option>
+                  )}
+                </select>
+                <p className="mt-2 truncate text-xs text-zinc-500">
+                  {selectedUploadCategory ? `${selectedUploadCategory.totalStickers} figurinhas cadastradas` : 'Nenhuma categoria disponivel'}
+                </p>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-300">Pasta de figurinhas</span>
+                <div className="rounded-lg border border-dashed border-white/15 bg-black p-3">
+                  <Input
+                    type="file"
+                    accept="image/png,.png"
+                    multiple
+                    onChange={(event) => setStickerFiles(Array.from(event.target.files ?? []))}
+                    className="h-11 border-white/10 bg-zinc-950 text-white file:mr-4 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-black"
+                    {...{ webkitdirectory: '', directory: '' }}
+                  />
+                  <div className="mt-3 flex flex-col gap-1 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      {stickerFiles.length ? `${stickerFiles.length} arquivos selecionados` : 'Escolha uma pasta apenas com arquivos PNG.'}
+                    </span>
+                    {stickerFiles.length ? <span>{formatFileSize(selectedFolderSize)}</span> : null}
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-5 text-zinc-500">
+                O envio remove subpastas, aceita apenas PNG e renomeia em sequencia: 1.png, 2.png, 3.png...
+              </p>
+              <Button type="submit" className="h-11 gap-2 px-5" disabled={isUploadingSticker || !stickerCategories.length}>
+                {isUploadingSticker ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Enviar figurinhas
+              </Button>
+            </div>
+          </div>
+        </form>
+
+        <section className="mt-5 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+          <div className="border-b border-white/10 p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white/10 text-white">
+                  <Pencil className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Gerenciar categorias e figurinhas</h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                    Edite o card, escolha a capa, renomeie figurinhas ou remova itens enviados.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-10 gap-2"
+                onClick={() => managedCategoryId && loadManagedCategoryImages(managedCategoryId)}
+                disabled={!managedCategoryId || isLoadingManagedImages}
+              >
+                {isLoadingManagedImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Atualizar
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-6 p-5 sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-300">Categoria</span>
+                <select
+                  value={managedCategoryId}
+                  onChange={(event) => handleManagedCategoryChange(event.target.value)}
+                  className="flex h-11 w-full rounded-md border border-white/10 bg-black px-3 py-2 text-sm text-white ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {stickerCategories.length ? (
+                    stickerCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.title}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Nenhuma categoria</option>
+                  )}
+                </select>
+              </label>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <SummaryItem label="Figurinhas" value={managedCategory?.totalStickers ?? 0} />
+                <div className="rounded-md border border-white/10 bg-black p-4 sm:col-span-2">
+                  <p className="text-sm text-zinc-500">Capa atual</p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="truncate text-sm text-white">{managedCategory?.coverUrl ? 'Capa definida' : 'Sem capa definida'}</p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 gap-2 text-zinc-300 hover:bg-white/10 hover:text-white"
+                      onClick={handleRemoveCover}
+                      disabled={!managedCategory?.coverUrl || busyAction === 'remove-cover'}
+                    >
+                      {busyAction === 'remove-cover' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateCategory} className="rounded-lg border border-white/10 bg-black p-4">
+              <div className="grid gap-4 lg:grid-cols-[260px_1fr_auto_auto] lg:items-end">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-zinc-300">Nome</span>
+                  <Input
+                    value={editCategoryTitle}
+                    onChange={(event) => setEditCategoryTitle(event.target.value)}
+                    className="h-11 border-white/10 bg-zinc-950 text-white"
+                    placeholder="Nome da categoria"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-zinc-300">Descricao</span>
+                  <Input
+                    value={editCategoryDescription}
+                    onChange={(event) => setEditCategoryDescription(event.target.value)}
+                    className="h-11 border-white/10 bg-zinc-950 text-white"
+                    placeholder="Descricao do card"
+                  />
+                </label>
+                <Button type="submit" className="h-11 gap-2" disabled={!managedCategoryId || busyAction === 'update-category'}>
+                  {busyAction === 'update-category' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
+                  Salvar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="h-11 gap-2"
+                  onClick={handleDeleteCategory}
+                  disabled={!managedCategoryId || busyAction === 'delete-category'}
+                >
+                  {busyAction === 'delete-category' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Excluir
+                </Button>
+              </div>
+            </form>
+
+            <div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">Figurinhas da categoria</h4>
+                <span className="text-xs text-zinc-500">{managedImages.length} carregadas</span>
+              </div>
+
+              {isLoadingManagedImages ? (
+                <div className="rounded-lg border border-white/10 bg-black p-8 text-center text-sm text-zinc-400">
+                  <Loader2 className="mx-auto mb-3 h-5 w-5 animate-spin" />
+                  Carregando figurinhas
+                </div>
+              ) : managedImages.length ? (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {managedImages.map((image) => {
+                    const isCover = managedCategory?.coverImageId === image.id || managedCategory?.coverUrl === image.url;
+                    const isEditing = editingImageId === image.id;
+
+                    return (
+                      <article key={image.id} className="overflow-hidden rounded-lg border border-white/10 bg-black">
+                        <div className="relative flex aspect-square items-center justify-center border-b border-white/10 bg-[linear-gradient(45deg,#111_25%,transparent_25%),linear-gradient(-45deg,#111_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#111_75%),linear-gradient(-45deg,transparent_75%,#111_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-5">
+                          <img
+                            src={image.url}
+                            alt=""
+                            className="max-h-full max-w-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
+                          />
+                          {isCover ? (
+                            <span className="absolute left-3 top-3 inline-flex rounded-full bg-emerald-400 px-2.5 py-1 text-xs font-semibold text-black">
+                              Capa
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="space-y-3 p-3">
+                          <div className="min-w-0">
+                            {isEditing ? (
+                              <Input
+                                value={editingImageName}
+                                onChange={(event) => setEditingImageName(event.target.value)}
+                                className="h-9 border-white/10 bg-zinc-950 text-sm text-white"
+                              />
+                            ) : (
+                              <p className="truncate text-sm font-semibold text-white" title={image.name}>
+                                {image.name}
+                              </p>
+                            )}
+                            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-zinc-500">
+                              <span>{formatFileSize(image.size)}</span>
+                              <span className="truncate">{image.mimeType}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 border-t border-white/10 bg-zinc-950/70 p-3">
+                          {isEditing ? (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="gap-2"
+                                onClick={() => handleRenameImage(image.id)}
+                                disabled={busyAction === `rename-${image.id}`}
+                              >
+                                {busyAction === `rename-${image.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+                                Salvar
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  setEditingImageId('');
+                                  setEditingImageName('');
+                                }}
+                              >
+                                Cancelar
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                className="gap-2"
+                                onClick={() => {
+                                  setEditingImageId(image.id);
+                                  setEditingImageName(image.name);
+                                }}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Nome
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                className="gap-2"
+                                onClick={() => handleSetCover(image.id)}
+                                disabled={busyAction === `cover-${image.id}` || isCover}
+                              >
+                                {busyAction === `cover-${image.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
+                                Capa
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                className="col-span-2 gap-2"
+                                onClick={() => handleDeleteImage(image)}
+                                disabled={busyAction === `delete-${image.id}`}
+                              >
+                                {busyAction === `delete-${image.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                Excluir figurinha
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-white/10 bg-black p-8 text-center text-sm text-zinc-500">
+                  Selecione uma categoria e atualize para carregar as figurinhas.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
       </section>
+
+      {error || success ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className={`w-full max-w-md overflow-hidden rounded-lg border shadow-2xl shadow-black/60 ${
+              error ? 'border-red-500/30 bg-zinc-950' : 'border-emerald-500/30 bg-zinc-950'
+            }`}
+          >
+            <div className={`h-1 ${error ? 'bg-red-500' : 'bg-emerald-400'}`} />
+            <div className="p-5">
+              <div className="flex items-start gap-4">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${
+                  error ? 'bg-red-500/10 text-red-300' : 'bg-emerald-400/10 text-emerald-300'
+                }`}>
+                  {error ? <AlertCircle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold text-white">
+                    {error ? 'Algo precisa de atencao' : 'Tudo certo'}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-300">
+                    {error || success}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="rounded-md p-1 text-zinc-500 hover:bg-white/10 hover:text-white"
+                  onClick={() => {
+                    setError('');
+                    setSuccess('');
+                  }}
+                  aria-label="Fechar mensagem"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <Button
+                  type="button"
+                  className={error ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-400 text-black hover:bg-emerald-300'}
+                  onClick={() => {
+                    setError('');
+                    setSuccess('');
+                  }}
+                >
+                  Entendi
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -184,4 +1059,76 @@ function SummaryItem({ label, value }: { label: string; value: number }) {
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
+}
+
+function formatFileSize(bytes: number) {
+  if (!bytes) {
+    return '0 KB';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** index;
+
+  return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function normalizeStickerUploadFiles(files: File[]) {
+  const pngFiles = files.filter(isPngFile);
+
+  if (!pngFiles.length) {
+    return {
+      ok: false as const,
+      error: 'Nenhum arquivo PNG foi encontrado na pasta selecionada.',
+    };
+  }
+
+  const sortedFiles = [...pngFiles].sort((a, b) => getUploadSortName(a).localeCompare(getUploadSortName(b), undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  }));
+
+  return {
+    ok: true as const,
+    files: sortedFiles.map((file, index) => new File([file], `${index + 1}.png`, {
+      type: 'image/png',
+      lastModified: file.lastModified,
+    })),
+  };
+}
+
+function isPngFile(file: File) {
+  return file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+}
+
+function getUploadSortName(file: File) {
+  return ((file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name).replace(/\\/g, '/');
+}
+
+function normalizeStickerCategory(category: StickerCategory) {
+  return {
+    ...category,
+    coverUrl: normalizeProtectedUrl(category.coverUrl),
+  };
+}
+
+function normalizeStickerImage(image: StickerImage) {
+  return {
+    ...image,
+    name: image.name || image.originalName || 'figurinha',
+    url: normalizeProtectedUrl(image.url) ?? '',
+    downloadUrl: normalizeProtectedUrl(image.downloadUrl) ?? '',
+  };
+}
+
+function normalizeProtectedUrl(url?: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/api/')) {
+    return url;
+  }
+
+  return url.startsWith('/') ? `/api${url}` : `/api/${url}`;
 }

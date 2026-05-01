@@ -29,7 +29,8 @@ async function handler(request: NextRequest, context: RouteContext) {
     return response;
   }
 
-  const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text();
+  const requestBody = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer();
+  const body = requestBody?.byteLength ? requestBody : undefined;
   const headers = new Headers();
 
   headers.set('Accept', 'application/json');
@@ -49,10 +50,30 @@ async function handler(request: NextRequest, context: RouteContext) {
     cache: 'no-store',
   });
 
+  const contentType = backendResponse.headers.get('Content-Type') ?? '';
+
+  if (!contentType.includes('application/json')) {
+    const responseHeaders = new Headers();
+
+    for (const header of ['Content-Type', 'Content-Length', 'Content-Disposition', 'Cache-Control']) {
+      const value = backendResponse.headers.get(header);
+
+      if (value) {
+        responseHeaders.set(header, value);
+      }
+    }
+
+    return new NextResponse(await backendResponse.arrayBuffer(), {
+      status: backendResponse.status,
+      headers: responseHeaders,
+    });
+  }
+
   const text = await backendResponse.text();
   const data = parseJson(text);
   const responseBody = path === '/auth/login' && backendResponse.ok ? stripToken(data) : data;
   const response = NextResponse.json(responseBody, { status: backendResponse.status });
+  response.headers.set('Cache-Control', 'no-store');
 
   if (path === '/auth/login' && backendResponse.ok && isObject(data) && typeof data.token === 'string') {
     response.cookies.set(SESSION_COOKIE, data.token, SESSION_COOKIE_OPTIONS);
@@ -92,3 +113,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 export const GET = handler;
 export const POST = handler;
+export const PATCH = handler;
+export const PUT = handler;
+export const DELETE = handler;
