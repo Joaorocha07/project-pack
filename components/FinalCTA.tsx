@@ -68,12 +68,12 @@ export default function FinalCTA() {
             </p>
             <div className="flex justify-center items-baseline mb-1">
               <span className="text-5xl font-extrabold bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,216,51,0.3)] whitespace-nowrap">
-                R$ 23,90
+                R$ 29,90
               </span>
             </div>
             <p className="text-xl text-gray-300">
-              ou 2x de{' '}
-              <span className="text-[#ffd833] font-bold">R$ 13,37</span>
+              ou 6x de{' '}
+              <span className="text-[#ffd833] font-bold">R$ 5,73</span>
             </p>
             <p className="text-sm text-gray-400 mt-2 italic">
               *Pagamento único, acesso vitalício
