@@ -1,119 +1,82 @@
 'use client'
 
 import React from 'react'
-
+import Image from 'next/image'
 import ImageClienteUm from '@/images/foto-cliente-1.jpg'
 import ImageClienteDois from '@/images/foto-cliente-2.jpg'
 import ImageClienteTres from '@/images/foto-cliente-3.png'
-
-import { Heart, MessageCircle, Send } from 'lucide-react'
+import { BadgeCheck, MessageCircle } from 'lucide-react'
 
 export default function Testimonials() {
   const testimonials = [
     {
-      name: "Ana Dellai",
-      username: "@anadellai_music",
-      text: "Minhas vendas aumentaram 300% depois que comecei a usar essas figurinhas! Stories muito mais profissionais.",
-      likes: 127,
-      avatar: ImageClienteUm.src
+      name: 'Ana Dellai',
+      username: '@anadellai_music',
+      metric: 'Stories mais profissionais em 1 tarde',
+      text: 'Eu não precisava de mais um curso. Precisava de peças prontas para postar sem perder tempo ajustando tudo.',
+      avatar: ImageClienteUm,
     },
     {
-      name: "Ana Laura", 
-      username: "@lips.stargirl",
-      text: "Que pack incrível! Economizo horas criando stories agora. Super recomendo para todas as empreendedoras!",
-      likes: 89,
-      avatar: ImageClienteDois.src
+      name: 'Ana Laura',
+      username: '@lips.stargirl',
+      metric: 'Mais agilidade na rotina de conteúdo',
+      text: 'Uso para chamada, caixinha, aviso de agenda e oferta. Fica bonito e combina com qualquer foto do story.',
+      avatar: ImageClienteDois,
     },
     {
-      name: "Laryssa Rocha",
-      username: "@_laryznx1",
-      text: "Estava procurando algo assim há muito tempo. Figurinhas de qualidade e muito fácil de usar. Amei! 💕",
-      likes: 156,
-      avatar: ImageClienteTres.src
-    }
+      name: 'Laryssa Rocha',
+      username: '@_laryznx1',
+      metric: 'Pack organizado por nichos',
+      text: 'A área de membros facilita muito. Entro, escolho a categoria e baixo as figurinhas que fazem sentido para o dia.',
+      avatar: ImageClienteTres,
+    },
   ]
 
   return (
-    <section className="relative py-28 px-6 overflow-hidden bg-[#05000a] text-white">
-      {/* 🌌 Fundo animado estilo WhyChoose */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1c002f] via-[#0a0015] to-[#11001f] animate-gradientMove" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_25%,rgba(255,73,167,0.25),transparent_70%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_75%,rgba(255,216,51,0.2),transparent_70%)]" />
-
-      {/* ✨ Partículas flutuantes */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 15 }).map((_, i) => (
-          <span
-            key={i}
-            className="absolute block w-2 h-2 rounded-full bg-gradient-to-r from-[#ffd833] to-[#f943a7] opacity-30 animate-float"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${5 + Math.random() * 5}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Conteúdo principal */}
-      <div className="relative z-10 max-w-4xl mx-auto">
-        {/* Título */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-            O que falam sobre{' '}
-            <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(249,67,167,0.3)]">
-              Pack do Criador
-            </span>
-          </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Clientes reais mostrando resultados incríveis com o pack.
-          </p>
+    <section className="bg-black px-6 py-24 text-[#F8F8F8] md:py-32 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-12 lg:col-span-5">
+            <p className="mb-4 text-sm font-bold uppercase tracking-[0.28em] text-[#F8F8F8]">
+              Criadoras usando na prática
+            </p>
+            <h2 className="font-display text-4xl font-bold leading-tight md:text-5xl">
+              Mais presença no Instagram, sem depender de design do zero.
+            </h2>
+          </div>
+          <div className="col-span-12 flex items-end lg:col-span-7">
+            <p className="max-w-2xl text-lg leading-8 text-[#F8F8F8]/70">
+              O pack foi feito para influencers, empreendedoras e pessoas comuns que querem postar com frequência e manter um visual consistente.
+            </p>
+          </div>
         </div>
 
-        {/* Cards */}
-        <div className="space-y-10">
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className="relative max-w-md mx-auto bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 
-                         hover:border-[#ffd833]/40 hover:shadow-[0_0_25px_rgba(255,216,51,0.25)] 
-                         transition-all duration-300 hover:scale-[1.03]"
-            >
-              {/* Glow de fundo */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#ffd833] to-[#f943a7] opacity-10 rounded-2xl blur-xl" />
-
-              <div className="relative z-10">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full flex items-center justify-center text-black font-bold mr-3">
-                    <img
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-white">{testimonial.name}</h4>
-                    <p className="text-gray-400 text-sm">{testimonial.username}</p>
-                  </div>
-                </div>
-
-                <p className="text-gray-300 mb-4">{testimonial.text}</p>
-
-                <div className="flex items-center space-x-4 text-gray-400">
-                  <button className="flex items-center space-x-1 hover:text-[#f943a7] transition-colors">
-                    <Heart className="h-5 w-5" />
-                    <span>{testimonial.likes}</span>
-                  </button>
-                  <button className="hover:text-[#ffd833] transition-colors">
-                    <MessageCircle className="h-5 w-5" />
-                  </button>
-                  <button className="hover:text-[#9a50e2] transition-colors">
-                    <Send className="h-5 w-5" />
-                  </button>
+        <div className="mt-14 grid gap-4 md:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <article key={testimonial.username} className="border border-white/10 bg-white/[0.035] p-6 transition duration-300 hover:-translate-y-1 hover:border-white/35">
+              <div className="flex items-center gap-4">
+                <Image
+                  src={testimonial.avatar}
+                  alt={testimonial.name}
+                  width={56}
+                  height={56}
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="font-bold text-[#F8F8F8]">{testimonial.name}</h3>
+                  <p className="text-sm text-[#F8F8F8]/56">{testimonial.username}</p>
                 </div>
               </div>
-            </div>
+              <div className="mt-6 inline-flex items-center gap-2 border border-[#F8F8F8]/40 bg-[#F8F8F8]/10 px-3 py-2 text-sm font-semibold text-[#F8F8F8]">
+                <BadgeCheck className="h-4 w-4 text-[#F8F8F8]" />
+                {testimonial.metric}
+              </div>
+              <p className="mt-5 leading-7 text-[#F8F8F8]/70">{testimonial.text}</p>
+              <div className="mt-6 flex items-center gap-2 text-sm text-[#F8F8F8]/50">
+                <MessageCircle className="h-4 w-4" />
+                Feedback de cliente
+              </div>
+            </article>
           ))}
         </div>
       </div>

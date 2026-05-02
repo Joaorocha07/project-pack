@@ -2,53 +2,38 @@ import React from 'react'
 
 export default function Niches() {
   const niches = [
-    "Ano novo", "Agronomia", "Artesanato", "Balão", "Bom dia", "Boa tarde/Boa noite",
-    "Bronzeamento", "Blogueira", "Café", "Caixinha de Pergunta", "Caixinha de vidro",
-    "Chá da tarde", "Clientes", "Confeitaria", "Cristã", "Depilação", "Dias da semana",
-    "Dieta", "Diversas", "Dona de Casa", "Efeito transparente", "Elementos", "Estética",
-    "Familía", "Férias", "Fitness", "Frases universais", "Loja", "Maquiagem", "Maquina Ton",
-    "Marketing Digital", "Meses", "Moldura", "Nail Designer (Unhas)", "Natal", "Neon",
-    "Nutrição", "Emojis", "Rede Social", "Sobrancelha", "Lash Desgner (cílios)",
-    "Trabalho", "Salão de Beleza"
+    'Influencer', 'Lifestyle', 'Loja feminina', 'Estética', 'Nail designer', 'Confeitaria',
+    'Marketing digital', 'Fitness', 'Bronzeamento', 'Cafés', 'Achadinhos', 'Frases universais',
+    'Caixinha de perguntas', 'Datas comemorativas', 'Sobrancelhas', 'Maquiagem', 'Rotina', 'Agenda e avisos',
   ]
 
   return (
-    <section className="py-20 px-6 bg-[#05000a] text-white">
-      <div className="max-w-6xl mx-auto">
-        {/* Título */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Nichos do{' '}
-            <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent">
-              pack
-            </span>
-          </h2>
-          <p className="text-gray-400 text-lg">
-            Escolha o nicho ideal e crie stories que falam diretamente com seu público.
+    <section className="relative overflow-hidden bg-black px-6 py-24 text-[#F8F8F8] md:py-32 lg:px-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_12%,rgba(248,248,248,0.08),transparent_30%)]" />
+      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-8">
+        <div className="col-span-12 lg:col-span-4">
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.28em] text-[#F8F8F8]">
+            Categorias
           </p>
+          <h2 className="font-display text-4xl font-bold leading-tight md:text-5xl">
+            Packs para vários estilos de conteúdo.
+          </h2>
         </div>
 
-        {/* Grid de cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-          {niches.map((niche, index) => (
-            <div
-              key={index}
-              className={`group relative p-4 rounded-2xl text-center font-medium text-white transition-all duration-300
-                bg-white/5 backdrop-blur-md border border-white/10
-                hover:scale-105 hover:border-[#ffd833]/40 hover:shadow-[0_0_20px_rgba(255,216,51,0.2)]
-                hover:text-[#ffd833]`}
-            >
-              {/* Brilho dinâmico de fundo */}
+        <div className="col-span-12 lg:col-span-8">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {niches.map((niche) => (
               <div
-                className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[#ffd833] via-[#f943a7] to-[#9a50e2]
-                opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500`}
-              />
-              {/* Conteúdo */}
-              <div className="relative z-10 flex items-center justify-center min-h-[80px]">
-                <p className="text-base md:text-lg tracking-wide">{niche}</p>
+                key={niche}
+                className="flex min-h-[72px] items-center border border-white/10 bg-white/[0.035] px-4 text-sm font-semibold text-[#F8F8F8] shadow-[0_12px_45px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-1 hover:border-white/35 hover:bg-white/[0.055]"
+              >
+                {niche}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <p className="mt-6 text-sm leading-6 text-[#F8F8F8]/60">
+            As categorias aparecem organizadas na área de membros para acessar, visualizar e baixar as figurinhas quando precisar.
+          </p>
         </div>
       </div>
     </section>

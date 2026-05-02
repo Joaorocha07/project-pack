@@ -1,109 +1,104 @@
 import React from 'react'
-import { Clock, Check, ShoppingCart } from 'lucide-react'
+import { CreditCard, DownloadCloud, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
 
 export default function FinalCTA() {
+  const benefits = [
+    'Mais de 8.000 figurinhas',
+    'Área de membros para acessar e baixar',
+    'Categorias organizadas por nicho',
+    'Pagamento único e acesso vitalício',
+    'Suporte por e-mail',
+    'Garantia de 7 dias',
+  ]
+
   return (
-    <section
-      id="offer"
-      className="relative py-20 px-6 sm:px-10 bg-gradient-to-b from-[#0a0015] via-[#15001e] to-black overflow-hidden"
-    >
-      {/* 💫 Fundo de destaque com brilho suave */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(249,67,167,0.1),transparent_60%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(255,216,51,0.07),transparent_70%)]" />
-      <div className="absolute inset-0 backdrop-blur-[1px]" />
-
-      {/* 🔥 Glow no fundo do card */}
-      <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] -translate-x-1/2 -translate-y-1/2 bg-gradient-to-tr from-[#f943a7]/10 to-[#ffd833]/10 rounded-full blur-3xl animate-pulse-slow"></div>
-
-      {/* Conteúdo */}
-      <div className="relative z-10 max-w-4xl mx-auto text-center">
-        {/* Badge de urgência */}
-        <div className="mb-10 inline-flex items-center px-8 py-3 bg-gradient-to-r from-[#f943a7]/20 to-[#ffd833]/20 rounded-full border border-[#f943a7]/40 backdrop-blur-md shadow-md animate-pulse">
-          <Clock className="text-[#ffd833] mr-2 h-5 w-5" />
-          <span className="text-[#ffd833] font-semibold uppercase tracking-wider">
-            ÚLTIMAS VAGAS DISPONÍVEIS!
-          </span>
-        </div>
-
-        {/* Card central */}
-        <div className="relative bg-gradient-to-b from-white/10 to-white/5 border border-white/20 rounded-3xl p-10 sm:p-12 shadow-[0_0_50px_rgba(249,67,167,0.2)] backdrop-blur-lg">
-          <h2 className="text-3xl md:text-4xl font-bold mb-10">
-            <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent">
-              EU QUERO
-            </span>{' '}
-            O PACK DO CRIADOR
+    <section id="offer" className="relative overflow-hidden bg-black px-6 py-24 text-[#F8F8F8] md:py-32 lg:px-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,0,255,0.07),transparent_38%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_88%_72%,rgba(248,248,248,0.08),transparent_32%)]" />
+      <div className="relative mx-auto grid max-w-7xl grid-cols-12 gap-8">
+        <div className="col-span-12 lg:col-span-5">
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.28em] text-[#F8F8F8]">
+            Oferta do pack
+          </p>
+          <h2 className="font-display text-4xl font-bold leading-tight md:text-5xl">
+            Comece hoje com uma biblioteca pronta para os seus Stories.
           </h2>
+          <p className="mt-5 text-lg leading-8 text-[#F8F8F8]/70">
+            Você entra na área de membros, abre a categoria desejada e baixa as figurinhas direto no celular.
+          </p>
 
-          {/* Benefícios */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12 text-left max-w-2xl mx-auto">
-            {[
-              ['+ 8000 Figurinhas', '#ffd833'],
-              ['Molduras e Sombras', '#f943a7'],
-              ['Acesso imediato no e-mail', '#9a50e2'],
-              ['Vídeo de como usar', '#ffd833'],
-              ['Pagamento Único', '#f943a7'],
-              ['Suporte direto por e-mail', '#9a50e2'],
-            ].map(([text, color], i) => (
-              <div
-                key={i}
-                className="flex items-center bg-white/5 rounded-xl px-4 py-3 backdrop-blur-sm hover:bg-white/10 transition-colors"
-              >
-                <Check
-                  className="mr-3 h-6 w-6 flex-shrink-0"
-                  style={{ color }}
-                />
-                <span className="text-gray-200">{text}</span>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {benefits.map((benefit) => (
+              <div key={benefit} className="flex items-center gap-3 text-sm font-semibold text-[#F8F8F8]/75">
+                <span className="h-1.5 w-1.5 bg-[#FF00FF]" />
+                {benefit}
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Preço */}
-          <div className="mb-8">
-            <p className="text-gray-400 text-lg mb-2">
-              VALOR TOTAL:{' '}
-              <span className="line-through text-gray-500">R$ 57,00</span>
-            </p>
-            <p className="text-2xl font-bold mb-4 text-white">
-              MAS SÓ HOJE POR APENAS
-            </p>
-            <div className="flex justify-center items-baseline mb-1">
-              <span className="text-5xl font-extrabold bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,216,51,0.3)] whitespace-nowrap">
-                R$ 29,90
-              </span>
+        <div className="col-span-12 lg:col-span-7">
+          <div className="border border-white/10 bg-white/[0.035] p-6 shadow-[0_30px_110px_rgba(0,0,0,0.42)] md:p-10">
+            <div className="flex flex-col gap-4 border-b border-white/10 pb-8 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#F8F8F8]/48">
+                  Pack do Criador
+                </p>
+                <h3 className="mt-2 text-2xl font-bold text-[#F8F8F8]">Acesso premium vitalício</h3>
+              </div>
+              <div className="inline-flex items-center gap-2 border border-[#F8F8F8]/40 bg-[#F8F8F8]/10 px-4 py-2 text-sm font-semibold">
+                <DownloadCloud className="h-4 w-4 text-[#F8F8F8]" />
+                Entrega por e-mail
+              </div>
             </div>
-            <p className="text-xl text-gray-300">
-              ou 6x de{' '}
-              <span className="text-[#ffd833] font-bold">R$ 5,73</span>
-            </p>
-            <p className="text-sm text-gray-400 mt-2 italic">
-              *Pagamento único, acesso vitalício
-            </p>
-          </div>
 
-          {/* Botão principal */}
-          <div className="relative inline-flex w-full sm:w-auto justify-center">
+            <div className="py-8">
+              <p className="text-[#F8F8F8]/48">
+                Valor total <span className="line-through">R$ 57,00</span>
+              </p>
+              <p className="mt-2 text-lg font-bold text-[#F8F8F8]">Hoje por apenas</p>
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                <span className="font-display text-6xl font-bold leading-none text-[#F8F8F8] md:text-7xl">
+                  R$ 29,90
+                </span>
+                <span className="pb-2 text-lg text-[#F8F8F8]/70">
+                  ou 6x de <strong className="text-[#F8F8F8]">R$ 5,73</strong>
+                </span>
+              </div>
+            </div>
+
             <a
               href="https://pay.cakto.com.br/wjzbfzc_596335"
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center justify-center gap-2 sm:gap-3 px-6 py-4 sm:px-10 sm:py-5 md:px-14 md:py-6 
-                        text-base sm:text-lg md:text-xl font-bold text-black 
-                        bg-gradient-to-r from-[#ffd833] to-[#f943a7] 
-                        rounded-full transition-transform duration-300 
-                        hover:scale-105 shadow-2xl hover:shadow-[#ffd833]/50 focus:outline-none"
+              className="group flex w-full items-center justify-center gap-3 rounded-full bg-[#F8F8F8] px-8 py-5 text-base font-bold text-black shadow-[0_18px_60px_rgba(248,248,248,0.14)] transition duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_24px_80px_rgba(248,248,248,0.18)]"
             >
-              <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 flex-shrink-0 group-hover:animate-pulse" />
-              <span className="whitespace-nowrap tracking-wide">COMPRAR AGORA</span>
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#ffd833] to-[#f943a7] rounded-full blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
+              <ShoppingCart className="h-5 w-5" />
+              Comprar agora
             </a>
-          </div>
-        </div>
 
-        {/* Garantia e segurança */}
-        <div className="mt-10 text-gray-400 text-sm flex flex-col sm:flex-row items-center justify-center gap-4">
-          <p>✔ Compra 100% segura e criptografada</p>
-          <span className="hidden sm:inline-block">•</span>
-          <p>📩 Entrega automática no e-mail após pagamento</p>
+            <div className="mt-7 grid gap-3 text-sm text-[#F8F8F8]/60 sm:grid-cols-3">
+              <div className="flex items-center gap-2">
+                <LockKeyhole className="h-4 w-4 text-[#F8F8F8]" />
+                Site seguro
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[#F8F8F8]" />
+                Garantia de 7 dias
+              </div>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-[#F8F8F8]" />
+                Pix, Visa e Mastercard
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-6 text-xs font-bold uppercase tracking-[0.18em] text-[#F8F8F8]/50">
+              <span>Pix</span>
+              <span>Visa</span>
+              <span>Mastercard</span>
+              <span>Compra criptografada</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

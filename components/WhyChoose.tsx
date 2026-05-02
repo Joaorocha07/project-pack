@@ -1,106 +1,71 @@
 'use client'
+
 import React from 'react'
-import { Gift, TrendingUp, Play } from 'lucide-react'
+import { DownloadCloud, Folders, TrendingUp, Wand2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function WhyChoose() {
-  const cards = [
+  const features = [
     {
-      icon: <Gift className="h-8 w-8 text-black" />,
-      title: '+ 8000 FIGURINHAS',
-      color: 'from-[#ffd833] to-[#f943a7]',
-      textColor: 'text-[#ffd833]',
-      desc: 'Biblioteca completa para todos os seus stories',
+      icon: Wand2,
+      title: 'Stories com visual de influencer',
+      desc: 'Figurinhas, molduras e sombras para deixar posts comuns com acabamento de conteúdo bem produzido.',
     },
     {
-      icon: <TrendingUp className="h-8 w-8 text-white" />,
-      title: 'TENHA POSICIONAMENTO',
-      color: 'from-[#f943a7] to-[#9a50e2]',
-      textColor: 'text-[#f943a7]',
-      desc: 'Mostre autoridade no Instagram e destaque-se',
+      icon: Folders,
+      title: 'Tudo separado por categoria',
+      desc: 'A área de membros organiza os packs por nicho para você achar, abrir e baixar o que precisa em poucos cliques.',
     },
     {
-      icon: <Play className="h-8 w-8 text-white" />,
-      title: 'TRANSFORME SEUS STORIES',
-      color: 'from-[#9a50e2] to-[#ffd833]',
-      textColor: 'text-[#9a50e2]',
-      desc: 'Com poucos cliques, seus stories ficam incríveis',
+      icon: TrendingUp,
+      title: 'Mais ritmo para aparecer todos os dias',
+      desc: 'Use para rotina, bastidores, divulgação, ofertas, provas sociais e chamadas sem travar na parte visual.',
     },
     {
-      icon: <TrendingUp className="h-8 w-8 text-black" />,
-      title: 'MAIS RESULTADOS',
-      color: 'from-[#ffd833] to-[#f943a7]',
-      textColor: 'text-[#ffd833]',
-      desc: (
-        <div className="space-y-2 text-sm mt-4">
-          <p className="text-[#f943a7] font-semibold">+ ENGAJAMENTO</p>
-          <p className="text-[#9a50e2] font-semibold">+ VISUALIZAÇÕES</p>
-          <p className="text-[#ffd833] font-semibold">+ VENDAS</p>
-        </div>
-      ),
+      icon: DownloadCloud,
+      title: 'Download direto no celular',
+      desc: 'Comprou, recebeu o acesso por e-mail, entrou na área de membros e baixou as figurinhas protegidas.',
     },
   ]
 
   return (
-    <section className="relative py-28 px-4 md:px-10 overflow-hidden bg-[#05000a] text-white">
-      {/* Conteúdo principal */}
-      <div className="relative z-10 max-w-7xl mx-auto text-center flex flex-col items-center">
-        {/* Título */}
+    <section className="relative overflow-hidden bg-black px-6 py-24 text-[#F8F8F8] md:py-32 lg:px-8">
+      <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(138,43,226,0.08),transparent_32%)]" />
+      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-8">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="mb-16 px-4"
+          className="col-span-12 lg:col-span-5"
         >
-          <h2 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
-            Por que escolher o{' '}
-            <span className="bg-gradient-to-r from-[#ffd833] to-[#f943a7] bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(249,67,167,0.3)]">
-              Pack do Criador
-            </span>
+          <p className="mb-4 text-sm font-bold uppercase tracking-[0.28em] text-[#F8F8F8]">
+            Feito para aparecer melhor
+          </p>
+          <h2 className="font-display text-4xl font-bold leading-tight text-[#F8F8F8] md:text-5xl">
+            O visual dos seus Stories não precisa começar do zero.
           </h2>
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto">
-            Tudo o que você precisa para transformar seu conteúdo em algo memorável.
+          <p className="mt-5 text-lg leading-8 text-[#F8F8F8]/70">
+            O Pack do Criador resolve a parte visual para você focar na mensagem: vender, engajar, mostrar sua rotina ou simplesmente deixar seus stories mais estilosos.
           </p>
         </motion.div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center w-full max-w-6xl">
-          {cards.map((card, i) => (
+        <div className="col-span-12 grid gap-4 sm:grid-cols-2 lg:col-span-7">
+          {features.map((feature, index) => (
             <motion.div
-              key={i}
-              whileHover={{
-                scale: 1.07,
-                rotateY: 3,
-                boxShadow: '0 0 30px rgba(255,216,51,0.25)',
-              }}
-              initial={{ opacity: 0, y: 80 }}
+              key={feature.title}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
+              transition={{ duration: 0.45, delay: index * 0.06 }}
               viewport={{ once: true }}
-              className="relative group flex flex-col items-center text-center w-full sm:w-[90%] md:w-[85%] lg:w-full p-8 sm:p-10 rounded-3xl bg-white/5 backdrop-blur-lg border border-white/10 hover:border-[#ffd833]/40 transition-all duration-300"
+              className="group border border-white/10 bg-white/[0.035] p-6 shadow-[0_18px_70px_rgba(0,0,0,0.2)] transition duration-300 ease-out hover:-translate-y-1 hover:border-white/35 hover:bg-white/[0.055]"
             >
-              {/* Glow de fundo */}
-              <div
-                className={`absolute -inset-1 rounded-3xl bg-gradient-to-r ${card.color} opacity-10 group-hover:opacity-20 blur-xl transition-all duration-300`}
-              />
-              <div className="relative z-10 flex flex-col items-center">
-                <div
-                  className={`mb-6 inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r ${card.color} rounded-full shadow-[0_0_25px_rgba(255,255,255,0.15)]`}
-                >
-                  {card.icon}
-                </div>
-                <h3 className={`text-xl md:text-2xl font-bold ${card.textColor} mb-2`}>
-                  {card.title}
-                </h3>
-                {typeof card.desc === 'string' ? (
-                  <p className="text-gray-400 text-sm md:text-base max-w-xs">
-                    {card.desc}
-                  </p>
-                ) : (
-                  card.desc
-                )}
+              <div className="mb-7 flex h-12 w-12 items-center justify-center border border-[#F8F8F8]/50 bg-[#F8F8F8]/10">
+                <feature.icon className="h-5 w-5 text-[#F8F8F8]" />
               </div>
+              <h3 className="text-xl font-bold text-[#F8F8F8]">{feature.title}</h3>
+              <p className="mt-3 leading-7 text-[#F8F8F8]/70">{feature.desc}</p>
             </motion.div>
           ))}
         </div>
