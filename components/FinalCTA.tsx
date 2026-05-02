@@ -1,7 +1,12 @@
-import React from 'react'
-import { CreditCard, DownloadCloud, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
+'use client'
+
+import React, { useState } from 'react'
+import { CreditCard, DownloadCloud, Loader2, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
 
 export default function FinalCTA() {
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
+
   const benefits = [
     'Mais de 8.000 figurinhas',
     'Área de membros para acessar e baixar',
@@ -10,6 +15,36 @@ export default function FinalCTA() {
     'Suporte por e-mail',
     'Garantia de 7 dias',
   ]
+
+  const handleCheckout = async () => {
+    if (isCheckoutLoading) return
+
+    setIsCheckoutLoading(true)
+    setCheckoutError('')
+
+    try {
+      const response = await fetch('/api/checkout/link', {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        throw new Error('Nao foi possivel buscar o link de checkout.')
+      }
+
+      const data = await response.json()
+
+      if (!data?.url || typeof data.url !== 'string') {
+        throw new Error('Link de checkout invalido.')
+      }
+
+      window.location.href = data.url
+    } catch (error) {
+      console.error(error)
+      setCheckoutError('Nao foi possivel abrir o checkout. Tente novamente em instantes.')
+      setIsCheckoutLoading(false)
+    }
+  }
 
   return (
     <section id="offer" className="relative overflow-hidden bg-black px-6 py-24 text-[#F8F8F8] md:py-32 lg:px-8">
@@ -67,15 +102,25 @@ export default function FinalCTA() {
               </div>
             </div>
 
-            <a
-              href="https://pay.cakto.com.br/wjzbfzc_596335"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex w-full items-center justify-center gap-3 rounded-full bg-[#F8F8F8] px-8 py-5 text-base font-bold text-black shadow-[0_18px_60px_rgba(248,248,248,0.14)] transition duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_24px_80px_rgba(248,248,248,0.18)]"
+            <button
+              type="button"
+              onClick={handleCheckout}
+              disabled={isCheckoutLoading}
+              className="group flex w-full items-center justify-center gap-3 rounded-full bg-[#F8F8F8] px-8 py-5 text-base font-bold text-black shadow-[0_18px_60px_rgba(248,248,248,0.14)] transition duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_24px_80px_rgba(248,248,248,0.18)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
             >
-              <ShoppingCart className="h-5 w-5" />
-              Comprar agora
-            </a>
+              {isCheckoutLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-5 w-5" />
+              )}
+              {isCheckoutLoading ? 'Abrindo checkout...' : 'Comprar agora'}
+            </button>
+
+            {checkoutError ? (
+              <p className="mt-3 text-center text-sm font-semibold text-red-300">
+                {checkoutError}
+              </p>
+            ) : null}
 
             <div className="mt-7 grid gap-3 text-sm text-[#F8F8F8]/60 sm:grid-cols-3">
               <div className="flex items-center gap-2">
