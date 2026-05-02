@@ -183,6 +183,11 @@ export function isAdminRole(role?: User['role']) {
   return normalizedRole === 'admin' || normalizedRole === 'super_admin';
 }
 
+export function isMemberRole(user?: Pick<User, 'role' | 'roleLabel'> | null) {
+  const normalizedRole = String(user?.roleLabel ?? user?.role ?? '').toLowerCase();
+  return normalizedRole === 'user' || normalizedRole === 'afiliado' || normalizedRole === 'teste';
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = 'Erro na requisicao') {
   const headers = new Headers(options.headers);
   headers.set('x-device-id', getOrCreateDeviceId());

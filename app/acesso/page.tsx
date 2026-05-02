@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { clearSession, getMe, isAdminRole, type User } from '@/lib/auth';
+import { clearSession, getMe, isAdminRole, isMemberRole, type User } from '@/lib/auth';
 import capaAcessorios from '@/images/capa-figurinhas/acessórios.png';
 import capaAchadinhosShopee from '@/images/capa-figurinhas/ACHADINHOS-SHOPEE.png';
 import capaBarbie from '@/images/capa-figurinhas/BARBIE.png';
@@ -258,6 +258,11 @@ export default function AccessPage() {
 
         if (isAdminRole(currentUser.role)) {
           router.replace('/admin');
+          return;
+        }
+
+        if (!isMemberRole(currentUser)) {
+          router.replace('/login');
           return;
         }
 
