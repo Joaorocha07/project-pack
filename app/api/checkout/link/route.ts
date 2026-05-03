@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
-const CHECKOUT_LINK_ENDPOINT = 'https://pack-do-criador-back-end.onrender.com/checkout/link'
+const BACKEND_API_URL = (process.env.BACKEND_API_URL ?? 'https://pack-do-criador-back-end.onrender.com').replace(/\/$/, '')
+const CHECKOUT_LINK_ENDPOINT = `${BACKEND_API_URL}/checkout/link`
 
 export async function GET() {
   try {
