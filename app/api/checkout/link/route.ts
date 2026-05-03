@@ -3,12 +3,6 @@ import { NextResponse } from 'next/server'
 const BACKEND_API_URL = (process.env.BACKEND_API_URL ?? 'https://pack-do-criador-back-end-production.up.railway.app').replace(/\/$/, '')
 const CHECKOUT_LINK_ENDPOINT = `${BACKEND_API_URL}/checkout/link`
 
-function normalizeCheckoutUrl(url: string) {
-  const checkoutUrl = new URL(url)
-  checkoutUrl.searchParams.delete('affiliate')
-  return checkoutUrl.toString()
-}
-
 export async function GET() {
   try {
     const response = await fetch(CHECKOUT_LINK_ENDPOINT, {
@@ -32,7 +26,7 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ url: normalizeCheckoutUrl(data.url) })
+    return NextResponse.json({ url: data.url })
   } catch (error) {
     console.error(error)
 

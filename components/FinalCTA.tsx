@@ -38,10 +38,7 @@ export default function FinalCTA() {
         throw new Error('Link de checkout invalido.')
       }
 
-      const checkoutUrl = new URL(data.url)
-      checkoutUrl.searchParams.delete('affiliate')
-
-      window.location.href = checkoutUrl.toString()
+      window.location.href = data.url
     } catch (error) {
       console.error(error)
       setCheckoutError('Nao foi possivel abrir o checkout. Tente novamente em instantes.')
