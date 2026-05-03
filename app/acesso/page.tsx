@@ -454,7 +454,7 @@ export default function AccessPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {filteredProtectedCategories.map((category) => (
             <article key={category.id} className="overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
               <button
@@ -467,31 +467,31 @@ export default function AccessPage() {
                     <img
                       src={category.coverUrl}
                       alt=""
-                      className="h-full w-full object-contain p-6 transition duration-300 group-hover:scale-105"
+                      className="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-105 sm:p-6"
                       onError={(event) => {
                         event.currentTarget.style.display = 'none';
                       }}
                     />
                   ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/10 to-transparent" />
-                  <div className="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-md bg-emerald-400 text-black">
-                    <Folder className="h-5 w-5" />
+                  <div className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-md bg-emerald-400 text-black sm:left-3 sm:top-3 sm:h-10 sm:w-10">
+                    <Folder className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-300 sm:text-xs sm:tracking-[0.18em]">
                       {category.totalStickers} figurinhas
                     </p>
-                    <h4 className="mt-1 text-xl font-semibold text-white">{category.title}</h4>
-                    <p className="mt-2 line-clamp-2 text-sm leading-5 text-zinc-300">
+                    <h4 className="mt-1 text-base font-semibold text-white sm:text-xl">{category.title}</h4>
+                    <p className="mt-1 line-clamp-2 text-xs leading-4 text-zinc-300 sm:mt-2 sm:text-sm sm:leading-5">
                       {category.description || 'Pack de figurinhas protegido.'}
                     </p>
                   </div>
                 </div>
               </button>
 
-              <div className="space-y-3 p-3">
-                <Button variant="secondary" className="w-full gap-2" onClick={() => openProtectedCategory(category)}>
-                  <Eye className="h-4 w-4" />
+              <div className="space-y-3 p-2 sm:p-3">
+                <Button variant="secondary" className="w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-4 sm:text-sm" onClick={() => openProtectedCategory(category)}>
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Ver figurinhas
                 </Button>
               </div>
@@ -600,8 +600,8 @@ export default function AccessPage() {
                 </div>
               </div>
 
-              <div className="overflow-y-auto p-5 sm:p-6">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="overflow-y-auto p-3 sm:p-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
                   {selectedProtectedStickers.map((sticker) => (
                     <a
                       key={sticker.id}
@@ -609,7 +609,7 @@ export default function AccessPage() {
                       download
                       className="group overflow-hidden rounded-lg border border-white/10 bg-black transition hover:-translate-y-0.5 hover:border-emerald-400/40"
                     >
-                      <div className="flex aspect-square items-center justify-center bg-[linear-gradient(45deg,#111_25%,transparent_25%),linear-gradient(-45deg,#111_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#111_75%),linear-gradient(-45deg,transparent_75%,#111_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-4">
+                      <div className="flex aspect-square items-center justify-center bg-[linear-gradient(45deg,#111_25%,transparent_25%),linear-gradient(-45deg,#111_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#111_75%),linear-gradient(-45deg,transparent_75%,#111_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] p-3 sm:p-4">
                         <img
                           src={sticker.url}
                           alt=""
@@ -617,9 +617,9 @@ export default function AccessPage() {
                           className="max-h-full max-w-full object-contain transition group-hover:scale-105"
                         />
                       </div>
-                      <div className="flex items-center justify-between gap-2 border-t border-white/10 p-3">
-                        <span className="truncate text-sm font-medium text-zinc-200">{sticker.name}</span>
-                        <Download className="h-4 w-4 shrink-0 text-zinc-400" />
+                      <div className="flex items-center justify-between gap-2 border-t border-white/10 p-2 sm:p-3">
+                        <span className="truncate text-xs font-medium text-zinc-200 sm:text-sm">{sticker.name}</span>
+                        <Download className="h-3.5 w-3.5 shrink-0 text-zinc-400 sm:h-4 sm:w-4" />
                       </div>
                     </a>
                   ))}
