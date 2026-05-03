@@ -167,7 +167,7 @@ export default function LoginPage() {
               <p className="mt-2 text-sm leading-6 text-[#F8F8F8]/60">
                 {isResetMode
                   ? resetStep === 'request'
-                    ? 'Informe seu email para receber o codigo de seguranca.'
+                    ? 'Informe o mesmo email usado para comprar o Pack do Criador pela Cakto.'
                     : 'Informe o codigo recebido e escolha sua nova senha.'
                   : 'Use as credenciais enviadas pela Cakto.'}
               </p>
