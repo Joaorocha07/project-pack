@@ -1,6 +1,5 @@
 export const API_BASE_URL = (process.env.BACKEND_API_URL ?? 'https://pack-do-criador-back-end-production.up.railway.app').replace(/\/$/, '');
 export const SESSION_COOKIE = 'pack_session';
-export const DEVICE_COOKIE = 'deviceId';
 
 export const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,

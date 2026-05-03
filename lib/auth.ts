@@ -27,10 +27,6 @@ export type UserProfile = {
   temporarilyDisabled: boolean;
   disabledUntil: string | null;
   disabledReason: string | null;
-  deviceId?: string | null;
-  deviceBoundAt?: string | null;
-  deviceBound?: boolean;
-  requiresDeviceId?: boolean;
 };
 
 export type ImportCaktoSummary = {
@@ -55,8 +51,6 @@ export type AdminUserMutationResponse = {
 
 const USER_KEY = 'user';
 const REMEMBERED_EMAIL_KEY = 'pack_remembered_email';
-const DEVICE_ID_KEY = 'deviceId';
-const LEGACY_DEVICE_ID_KEY = 'pack_device_id';
 const REQUEST_TIMEOUT_MS = 45000;
 const API_BASE_URL = '/api';
 
@@ -153,28 +147,6 @@ export function saveRememberedEmail(email: string) {
   }
 }
 
-export function getOrCreateDeviceId() {
-  const storedDeviceId = localStorage.getItem(DEVICE_ID_KEY) || localStorage.getItem(LEGACY_DEVICE_ID_KEY);
-
-  if (storedDeviceId) {
-    persistDeviceId(storedDeviceId);
-    return storedDeviceId;
-  }
-
-  const deviceId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-  persistDeviceId(deviceId);
-  return deviceId;
-}
-
-function persistDeviceId(deviceId: string) {
-  localStorage.setItem(DEVICE_ID_KEY, deviceId);
-  localStorage.removeItem(LEGACY_DEVICE_ID_KEY);
-  document.cookie = `${DEVICE_ID_KEY}=${encodeURIComponent(deviceId)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
-}
-
 export async function clearSession() {
   localStorage.removeItem(USER_KEY);
 
@@ -203,7 +175,6 @@ export function isMemberRole(user?: Pick<User, 'role' | 'roleLabel'> | null) {
 
 async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = 'Erro na requisicao') {
   const headers = new Headers(options.headers);
-  headers.set('x-device-id', getOrCreateDeviceId());
 
   if (!headers.has('Content-Type') && options.body) {
     headers.set('Content-Type', 'application/json');
@@ -228,15 +199,14 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
   return data as T;
 }
 
-export async function login(email: string, password: string, deviceId = getOrCreateDeviceId()) {
+export async function login(email: string, password: string) {
   const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-device-id': deviceId,
     },
     credentials: 'include',
-    body: JSON.stringify({ email, password, deviceId }),
+    body: JSON.stringify({ email, password }),
   });
 
   const data = (await parseApiResponse(response)) as Partial<LoginResponse> & {
@@ -330,12 +300,6 @@ export async function updateUserPassword(userId: string, password: string, tempo
     method: 'PATCH',
     body: JSON.stringify({ password, temporaryPassword }),
   }, 'Nao foi possivel alterar a senha do perfil.');
-}
-
-export async function resetUserDevice(userId: string) {
-  return apiFetch<AdminUserMutationResponse>(`/admin/users/${encodeURIComponent(userId)}/device`, {
-    method: 'DELETE',
-  }, 'Nao foi possivel resetar o aparelho do perfil.');
 }
 
 export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {

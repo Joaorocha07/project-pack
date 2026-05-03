@@ -16,7 +16,6 @@ import {
   reactivateUser,
   sendAccessEmail,
   temporarilyDisableUser,
-  resetUserDevice,
   updateUserPassword,
   updateUserRole,
   type AdminUser,
@@ -229,22 +228,6 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function handleDeviceReset(user: AdminUser) {
-    setError('');
-    setSuccess('');
-    setBusyAction(`reset-device-${user.id}`);
-
-    try {
-      const data = await resetUserDevice(user.id);
-      applyUpdatedUser(data.user);
-      setSuccess(data.message || 'Aparelho resetado.');
-    } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Erro ao resetar aparelho.');
-    } finally {
-      setBusyAction('');
-    }
-  }
-
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -333,11 +316,10 @@ export default function AdminUsersPage() {
                         <p className="mt-2 break-all text-sm text-zinc-400">{user.email}</p>
                       </div>
 
-                      <div className="grid gap-3 text-sm sm:grid-cols-4 lg:min-w-[520px]">
+                      <div className="grid gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
                         <MiniStatus label="Acesso" value={user.hasAccess ? 'Liberado' : 'Bloqueado'} ok={user.hasAccess} />
                         <MiniStatus label="Senha temp." value={user.temporaryPassword ? 'Sim' : 'Nao'} ok={!user.temporaryPassword} />
                         <MiniStatus label="Email" value={user.accessEmailSent ? 'Enviado' : 'Pendente'} ok={user.accessEmailSent} />
-                        <MiniStatus label="Aparelho" value={user.profile?.deviceBound ? 'Vinculado' : 'Livre'} ok={user.profile?.deviceBound ? true : undefined} />
                       </div>
                     </div>
 
@@ -349,7 +331,7 @@ export default function AdminUsersPage() {
                     ) : null}
                   </div>
 
-                  <div className="grid gap-4 p-5 xl:grid-cols-[220px_minmax(0,1fr)_minmax(0,1fr)_280px_280px]">
+                  <div className="grid gap-4 p-5 xl:grid-cols-[220px_minmax(0,1fr)_280px_280px]">
                     <section className="rounded-lg border border-white/10 bg-black p-4">
                       <PanelTitle title="Perfil" />
                       <select
@@ -377,25 +359,6 @@ export default function AdminUsersPage() {
                       >
                         {sendingAccessTo === (user.id || user.email) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                         {user.accessEmailSent ? 'Reenviar acesso' : 'Enviar acesso'}
-                      </Button>
-                    </section>
-
-                    <section className="rounded-lg border border-white/10 bg-black p-4">
-                      <PanelTitle title="Aparelho" />
-                      <p className="mt-2 break-all text-xs leading-5 text-zinc-500">
-                        {user.profile?.deviceId ? user.profile.deviceId : 'Nenhum aparelho vinculado.'}
-                      </p>
-                      {user.profile?.deviceBoundAt ? (
-                        <p className="mt-1 text-xs text-zinc-600">Vinculado em {formatDate(user.profile.deviceBoundAt)}</p>
-                      ) : null}
-                      <Button
-                        variant="secondary"
-                        className="mt-4 w-full gap-2"
-                        onClick={() => handleDeviceReset(user)}
-                        disabled={!user.profile?.deviceBound || busyAction === `reset-device-${user.id}`}
-                      >
-                        {busyAction === `reset-device-${user.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                        Resetar aparelho
                       </Button>
                     </section>
 
@@ -566,10 +529,6 @@ function normalizeProfile(profile: unknown): AdminUser['profile'] {
     temporarilyDisabled: Boolean(raw.temporarilyDisabled ?? raw.temporarily_disabled ?? false),
     disabledUntil: (raw.disabledUntil ?? raw.disabled_until ?? null) as string | null,
     disabledReason: (raw.disabledReason ?? raw.disabled_reason ?? null) as string | null,
-    deviceId: (raw.deviceId ?? raw.device_id ?? null) as string | null,
-    deviceBoundAt: (raw.deviceBoundAt ?? raw.device_bound_at ?? null) as string | null,
-    deviceBound: Boolean(raw.deviceBound ?? raw.device_bound ?? raw.deviceId ?? raw.device_id ?? false),
-    requiresDeviceId: Boolean(raw.requiresDeviceId ?? raw.requires_device_id ?? false),
   };
 }
 

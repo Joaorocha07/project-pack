@@ -7,7 +7,6 @@ import { ArrowLeft, Eye, EyeOff, KeyRound, Loader2, LockKeyhole, LogIn, Mail, Se
 import {
   confirmPasswordReset,
   getMe,
-  getOrCreateDeviceId,
   getRememberedEmail,
   isAdminRole,
   login,
@@ -80,7 +79,7 @@ export default function LoginPage() {
 
     try {
       const normalizedEmail = email.trim();
-      const data = await login(normalizedEmail, password, getOrCreateDeviceId());
+      const data = await login(normalizedEmail, password);
       saveRememberedEmail(normalizedEmail);
       router.replace(data.user.temporaryPassword ? '/trocar-senha' : isAdminRole(data.user.role) ? '/admin' : '/acesso');
     } catch (caughtError) {
