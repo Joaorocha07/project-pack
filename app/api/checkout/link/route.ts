@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const BACKEND_API_URL = (process.env.BACKEND_API_URL ?? 'https://pack-do-criador-back-end.onrender.com').replace(/\/$/, '')
+const BACKEND_API_URL = (process.env.BACKEND_API_URL ?? 'https://pack-do-criador-back-end-production.up.railway.app').replace(/\/$/, '')
 const CHECKOUT_LINK_ENDPOINT = `${BACKEND_API_URL}/checkout/link`
 
 export async function GET() {
