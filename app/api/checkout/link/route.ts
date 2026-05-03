@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const BACKEND_API_URL = (process.env.BACKEND_API_URL ?? 'https://pack-do-criador-back-end-production.up.railway.app').replace(/\/$/, '')
 const CHECKOUT_LINK_ENDPOINT = `${BACKEND_API_URL}/checkout/link`
 
@@ -26,7 +29,14 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ url: data.url })
+    return NextResponse.json(
+      { url: data.url },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    )
   } catch (error) {
     console.error(error)
 

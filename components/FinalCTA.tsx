@@ -33,6 +33,7 @@ export default function FinalCTA() {
       }
 
       const data = await response.json()
+      console.log('Checkout link response:', data)
 
       if (!data?.url || typeof data.url !== 'string') {
         throw new Error('Link de checkout invalido.')
