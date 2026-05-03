@@ -4,7 +4,16 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Eye, EyeOff, KeyRound, Loader2, LockKeyhole, LogIn, Mail, Send } from 'lucide-react';
 
-import { confirmPasswordReset, getMe, getOrCreateDeviceId, isAdminRole, login, requestPasswordReset } from '@/lib/auth';
+import {
+  confirmPasswordReset,
+  getMe,
+  getOrCreateDeviceId,
+  getRememberedEmail,
+  isAdminRole,
+  login,
+  requestPasswordReset,
+  saveRememberedEmail,
+} from '@/lib/auth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +37,13 @@ export default function LoginPage() {
   const [isResetSubmitting, setIsResetSubmitting] = useState(false);
 
   useEffect(() => {
+    const rememberedEmail = getRememberedEmail();
+
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setResetEmail(rememberedEmail);
+    }
+
     let isMounted = true;
 
     async function redirectAuthenticatedUser() {
@@ -63,7 +79,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const data = await login(email.trim(), password, getOrCreateDeviceId());
+      const normalizedEmail = email.trim();
+      const data = await login(normalizedEmail, password, getOrCreateDeviceId());
+      saveRememberedEmail(normalizedEmail);
       router.replace(data.user.temporaryPassword ? '/trocar-senha' : isAdminRole(data.user.role) ? '/admin' : '/acesso');
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'Erro ao fazer login. Tente novamente.');
@@ -79,7 +97,9 @@ export default function LoginPage() {
     setIsResetSubmitting(true);
 
     try {
-      await requestPasswordReset(resetEmail.trim());
+      const normalizedEmail = resetEmail.trim();
+      await requestPasswordReset(normalizedEmail);
+      saveRememberedEmail(normalizedEmail);
       setResetStep('confirm');
       setSuccessMessage('Codigo enviado. Confira seu email e informe os 6 digitos abaixo.');
     } catch (caughtError) {
@@ -112,8 +132,10 @@ export default function LoginPage() {
     setIsResetSubmitting(true);
 
     try {
-      await confirmPasswordReset(resetEmail.trim(), resetCode.trim(), newPassword);
-      setEmail(resetEmail.trim());
+      const normalizedEmail = resetEmail.trim();
+      await confirmPasswordReset(normalizedEmail, resetCode.trim(), newPassword);
+      saveRememberedEmail(normalizedEmail);
+      setEmail(normalizedEmail);
       setPassword('');
       setResetCode('');
       setNewPassword('');

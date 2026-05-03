@@ -56,6 +56,8 @@ export default function ChangePasswordPage() {
 
     try {
       await changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
       setSuccess('Senha alterada com sucesso. Redirecionando para o produto...');
       const user = getStoredUser();
       setTimeout(() => router.replace(isAdminRole(user?.role) ? '/admin' : '/acesso'), 900);

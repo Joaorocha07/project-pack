@@ -54,6 +54,7 @@ export type AdminUserMutationResponse = {
 };
 
 const USER_KEY = 'user';
+const REMEMBERED_EMAIL_KEY = 'pack_remembered_email';
 const DEVICE_ID_KEY = 'deviceId';
 const LEGACY_DEVICE_ID_KEY = 'pack_device_id';
 const REQUEST_TIMEOUT_MS = 45000;
@@ -138,6 +139,18 @@ export function saveSession(user: User) {
 
 export function saveUser(user: User) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export function getRememberedEmail() {
+  return localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '';
+}
+
+export function saveRememberedEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (normalizedEmail) {
+    localStorage.setItem(REMEMBERED_EMAIL_KEY, normalizedEmail);
+  }
 }
 
 export function getOrCreateDeviceId() {
