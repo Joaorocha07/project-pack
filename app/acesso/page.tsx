@@ -360,6 +360,19 @@ export default function AccessPage() {
     void loadProtectedCategoryImages(selectedProtectedCategory, currentPage + 1);
   }
 
+  function scrollToCategoryCard(category: ProtectedStickerCategory) {
+    setQuery('');
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById(`category-${category.id}`)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    });
+  }
+
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -434,29 +447,68 @@ export default function AccessPage() {
           </Alert>
         ) : null}
 
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
-              <Grid2X2 className="h-4 w-4" />
-              Vitrine
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                <Grid2X2 className="h-4 w-4" />
+                Vitrine
+              </div>
+              <h3 className="mt-2 text-2xl font-semibold text-white">Packs de figurinhas</h3>
             </div>
-            <h3 className="mt-2 text-2xl font-semibold text-white">Packs de figurinhas</h3>
           </div>
 
-          <div className="relative w-full md:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="h-11 border-white/10 bg-zinc-950 pl-10 text-white placeholder:text-zinc-600"
-              placeholder="Buscar por categoria"
-            />
+          {protectedCategories.length ? (
+            <div className="-mx-5 snap-x overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max gap-3">
+                {protectedCategories.map((category) => (
+                  <button
+                    key={`shortcut-${category.id}`}
+                    type="button"
+                    className="group relative h-24 w-24 shrink-0 snap-start overflow-hidden rounded-lg border border-white/10 bg-zinc-950 text-left transition hover:border-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                    onClick={() => scrollToCategoryCard(category)}
+                    aria-label={`Ir para ${category.title}`}
+                  >
+                    {category.coverUrl ? (
+                      <img
+                        src={category.coverUrl}
+                        alt=""
+                        className="h-full w-full object-contain p-2 opacity-70 transition duration-300 group-hover:scale-105 group-hover:opacity-90"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+                    <span className="absolute bottom-2 left-2 right-2 line-clamp-2 text-xs font-semibold leading-4 text-white">
+                      {category.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="rounded-lg border border-emerald-400/25 bg-zinc-950 p-3 shadow-lg shadow-emerald-950/20">
+            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              <Search className="h-4 w-4 text-emerald-300" />
+              Pesquisar
+            </div>
+            <div className="relative mt-3 w-full">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-300" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="h-14 border-white/15 bg-black pl-12 text-base text-white placeholder:text-zinc-500 focus-visible:ring-emerald-400"
+                placeholder="Buscar por categoria"
+              />
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {filteredProtectedCategories.map((category) => (
-            <article key={category.id} className="overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
+            <article id={`category-${category.id}`} key={category.id} className="scroll-mt-24 overflow-hidden rounded-lg border border-white/10 bg-zinc-950">
               <button
                 type="button"
                 className="group block w-full text-left"

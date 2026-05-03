@@ -267,6 +267,20 @@ export async function changePassword(currentPassword: string, newPassword: strin
   return data;
 }
 
+export async function requestPasswordReset(email: string) {
+  return apiFetch<{ ok?: boolean; message?: string }>('/auth/password-reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  }, 'Nao foi possivel enviar o codigo. Confira o email e tente novamente.');
+}
+
+export async function confirmPasswordReset(email: string, code: string, newPassword: string) {
+  return apiFetch<{ ok?: boolean; message?: string }>('/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ email, code, newPassword }),
+  }, 'Nao foi possivel alterar a senha. Confira o codigo e tente novamente.');
+}
+
 export async function listUsers() {
   return apiFetch<{ ok: boolean; users: AdminUser[] }>('/admin/users', {}, 'Nao foi possivel listar usuarios.');
 }
