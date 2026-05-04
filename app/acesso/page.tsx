@@ -29,16 +29,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { clearSession, getMe, isAdminRole, isMemberRole, type User } from '@/lib/auth';
-import capaAcessorios from '@/images/capa-figurinhas/acessórios.png';
-import capaAchadinhosShopee from '@/images/capa-figurinhas/ACHADINHOS-SHOPEE.png';
-import capaBarbie from '@/images/capa-figurinhas/BARBIE.png';
-import capaBronzeamento from '@/images/capa-figurinhas/BRONZEAMENTO.png';
-import capaDentista from '@/images/capa-figurinhas/DENTISTA.png';
-import capaEstetica from '@/images/capa-figurinhas/ESTÉTICA.png';
-import capaFrasesUniversais from '@/images/capa-figurinhas/FRASES-UNIVERSAIS.png';
-import capaIfood from '@/images/capa-figurinhas/IFOOD.png';
-import capaJogosSlots from '@/images/capa-figurinhas/JOGOS-DE-SLOTS.png';
-import capaTransparente from '@/images/capa-figurinhas/TRANSPARENTE.png';
+import capaAcessorios from '@/images/capa-figurinhas/acessórios.webp';
+import capaAchadinhosShopee from '@/images/capa-figurinhas/ACHADINHOS-SHOPEE.webp';
+import capaBarbie from '@/images/capa-figurinhas/BARBIE.webp';
+import capaBronzeamento from '@/images/capa-figurinhas/BRONZEAMENTO.webp';
+import capaDentista from '@/images/capa-figurinhas/DENTISTA.webp';
+import capaEstetica from '@/images/capa-figurinhas/ESTÉTICA.webp';
+import capaFrasesUniversais from '@/images/capa-figurinhas/FRASES-UNIVERSAIS.webp';
+import capaIfood from '@/images/capa-figurinhas/IFOOD.webp';
+import capaJogosSlots from '@/images/capa-figurinhas/JOGOS-DE-SLOTS.webp';
+import capaTransparente from '@/images/capa-figurinhas/TRANSPARENTE.webp';
 import figurinha01 from '@/images/figurinha01.webp';
 import figurinha02 from '@/images/figurinha02.webp';
 import figurinha03 from '@/images/figurinha03.webp';

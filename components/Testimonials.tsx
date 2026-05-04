@@ -2,9 +2,9 @@
 
 import React from 'react'
 import Image from 'next/image'
-import ImageClienteUm from '@/images/foto-cliente-1.jpg'
-import ImageClienteDois from '@/images/foto-cliente-2.jpg'
-import ImageClienteTres from '@/images/foto-cliente-3.png'
+import ImageClienteUm from '@/images/foto-cliente-1.webp'
+import ImageClienteDois from '@/images/foto-cliente-2.webp'
+import ImageClienteTres from '@/images/foto-cliente-3.webp'
 import { BadgeCheck, MessageCircle } from 'lucide-react'
 
 export default function Testimonials() {

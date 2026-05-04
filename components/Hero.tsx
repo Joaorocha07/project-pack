@@ -1,8 +1,8 @@
 import React from 'react'
 import { BadgeCheck, Download, LockKeyhole, ShoppingCart, Sparkles } from 'lucide-react'
 import Image from 'next/image'
-import heroDesktop from '../images/banner-novo.png'
-import heroMobile from '../images/banner-story.png'
+import heroDesktop from '../images/banner-novo.webp'
+import heroMobile from '../images/banner-story.webp'
 
 interface HeroProps {
   onCtaClick: () => void

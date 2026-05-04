@@ -1,4 +1,6 @@
-import logo from '../images/pack-do-criador.png';
+import appleTouchIcon from '../images/android-chrome-192x192.png';
+import favicon from '../images/favicon.ico';
+import logo from '../images/pack-do-criador.webp';
 
 const siteUrl = 'https://packdocriador.com';
 const title = 'Pack do Criador | Figurinhas para Stories, Influencers e Criadores';
@@ -31,8 +33,8 @@ export default function CustomHead(): JSX.Element {
       <meta name="application-name" content="Pack do Criador" />
       <link rel="canonical" href={siteUrl} />
 
-      <link rel="icon" href={logo.src} type="image/png" sizes="48x48" />
-      <link rel="apple-touch-icon" href={logo.src} />
+      <link rel="icon" href={favicon.src} sizes="any" />
+      <link rel="apple-touch-icon" href={appleTouchIcon.src} />
       <meta name="theme-color" content="#000000" />
       <meta name="msapplication-TileColor" content="#000000" />
 
@@ -45,7 +47,7 @@ export default function CustomHead(): JSX.Element {
       <meta property="og:image" content={logoUrl} />
       <meta property="og:image:secure_url" content={logoUrl} />
       <meta property="og:image:alt" content="Logo do Pack do Criador" />
-      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:type" content="image/webp" />
       <meta property="og:image:width" content="1024" />
       <meta property="og:image:height" content="1024" />
 
