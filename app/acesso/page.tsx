@@ -765,13 +765,19 @@ function mergeImagesById(current: ProtectedStickerImage[], next: ProtectedSticke
   return [...current, ...uniqueNext];
 }
 
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL ?? '').replace(/\/$/, '');
+
 function normalizeProtectedUrl(url?: string | null) {
   if (!url) {
     return null;
   }
 
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/api/')) {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
+  }
+
+  if (BACKEND_URL) {
+    return url.startsWith('/') ? `${BACKEND_URL}${url}` : `${BACKEND_URL}/${url}`;
   }
 
   return url.startsWith('/') ? `/api${url}` : `/api/${url}`;
