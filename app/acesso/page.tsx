@@ -749,7 +749,7 @@ function normalizeImage(image: ProtectedStickerImage) {
     name: image.name || image.originalName || image.original_name || 'figurinha',
     mimeType: image.mimeType ?? image.mime_type ?? '',
     url: normalizeProtectedUrl(imageUrl) ?? '',
-    downloadUrl: normalizeProtectedUrl(downloadUrl, true) ?? '',
+    downloadUrl: normalizeProtectedUrl(downloadUrl) ?? '',
   };
 }
 
@@ -767,9 +767,7 @@ function mergeImagesById(current: ProtectedStickerImage[], next: ProtectedSticke
   return [...current, ...uniqueNext];
 }
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_API_URL ?? '').replace(/\/$/, '');
-
-function normalizeProtectedUrl(url?: string | null, forDownload = false) {
+function normalizeProtectedUrl(url?: string | null) {
   if (!url) {
     return null;
   }
@@ -778,11 +776,5 @@ function normalizeProtectedUrl(url?: string | null, forDownload = false) {
     return url;
   }
 
-  // Downloads vão direto ao backend (não passam pela Vercel)
-  if (forDownload && BACKEND_URL) {
-    return url.startsWith('/') ? `${BACKEND_URL}${url}` : `${BACKEND_URL}/${url}`;
-  }
-
-  // Visualização passa pelo proxy /api (envia cookie de autenticação)
   return url.startsWith('/') ? `/api${url}` : `/api/${url}`;
 }
