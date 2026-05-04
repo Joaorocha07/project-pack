@@ -1,6 +1,5 @@
 import './globals.css'
 import { Inter, Space_Grotesk } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import CustomHead from './head'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -18,7 +17,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans`}>
         {children}
-        <Analytics />
       </body>
     </html>
   )
