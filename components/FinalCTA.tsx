@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-
 import { CreditCard, DownloadCloud, Loader2, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
 
 export default function FinalCTA() {
