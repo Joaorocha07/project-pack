@@ -69,7 +69,5 @@
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
   },
-  "devDependencies": {
-    "@netlify/plugin-nextjs": "^5.15.10"
-  }
+  "devDependencies": {}
 }
