@@ -473,6 +473,7 @@ export default function AccessPage() {
                       <img
                         src={category.coverUrl}
                         alt=""
+                        loading="lazy"
                         className="h-full w-full object-contain p-2 opacity-70 transition duration-300 group-hover:scale-105 group-hover:opacity-90"
                         onError={(event) => {
                           event.currentTarget.style.display = 'none';
@@ -519,6 +520,7 @@ export default function AccessPage() {
                     <img
                       src={category.coverUrl}
                       alt=""
+                      loading="lazy"
                       className="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-105 sm:p-6"
                       onError={(event) => {
                         event.currentTarget.style.display = 'none';
