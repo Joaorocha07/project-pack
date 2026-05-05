@@ -103,7 +103,7 @@ export default function FinalCTA() {
               </div>
             </div>
 
-            {/* <button
+            <button
               type="button"
               onClick={handleCheckout}
               disabled={isCheckoutLoading}
@@ -115,9 +115,9 @@ export default function FinalCTA() {
                 <ShoppingCart className="h-5 w-5" />
               )}
               {isCheckoutLoading ? 'Abrindo checkout...' : 'Comprar agora'}
-            </button> */}
+            </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => window.open('https://pay.cakto.com.br/wjzbfzc_596335?affiliate=6daZPhsr', '_blank')}
               className="group flex w-full items-center justify-center gap-3 rounded-full bg-[#F8F8F8] px-8 py-5 text-base font-bold text-black shadow-[0_18px_60px_rgba(248,248,248,0.14)] transition duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_24px_80px_rgba(248,248,248,0.18)]"
@@ -125,7 +125,7 @@ export default function FinalCTA() {
               <ShoppingCart className="h-5 w-5" />
 
               Comprar agora
-            </button>
+            </button> */}
 
             {checkoutError ? (
               <p className="mt-3 text-center text-sm font-semibold text-red-300">
