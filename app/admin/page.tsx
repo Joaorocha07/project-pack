@@ -1504,25 +1504,39 @@ function normalizeStickerCategory(category: StickerCategory) {
     (category as StickerCategory & { count?: number }).count ??
     0
   );
+  const token = typeof window !== 'undefined' ? localStorage.getItem('pack_token') : null;
+
+  function withToken(url: string | null) {
+    if (!url || !token) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=${encodeURIComponent(token)}`;
+  }
 
   return {
     ...category,
     coverImageId,
     totalStickers,
-    coverUrl: normalizeProtectedUrl(coverUrl),
+    coverUrl: withToken(normalizeProtectedUrl(coverUrl)),
   };
 }
 
 function normalizeStickerImage(image: StickerImage) {
   const imageUrl = image.url ?? image.imageUrl ?? image.image_url ?? null;
   const downloadUrl = image.downloadUrl ?? image.download_url ?? imageUrl;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('pack_token') : null;
+
+  function withToken(url: string | null) {
+    if (!url || !token) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}token=${encodeURIComponent(token)}`;
+  }
 
   return {
     ...image,
     name: image.name || image.originalName || image.original_name || 'figurinha',
     mimeType: image.mimeType ?? image.mime_type ?? '',
-    url: normalizeProtectedUrl(imageUrl) ?? '',
-    downloadUrl: normalizeProtectedUrl(downloadUrl) ?? '',
+    url: withToken(normalizeProtectedUrl(imageUrl)) ?? '',
+    downloadUrl: withToken(normalizeProtectedUrl(downloadUrl)) ?? '',
   };
 }
 
