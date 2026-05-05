@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { CreditCard, DownloadCloud, Loader2, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
 
 export default function FinalCTA() {
@@ -33,7 +33,6 @@ export default function FinalCTA() {
       }
 
       const data = await response.json()
-      console.log('Checkout link response:', data)
 
       if (!data?.url || typeof data.url !== 'string') {
         throw new Error('Link de checkout invalido.')
@@ -41,7 +40,6 @@ export default function FinalCTA() {
 
       window.location.href = data.url
     } catch (error) {
-      console.error(error)
       setCheckoutError('Nao foi possivel abrir o checkout. Tente novamente em instantes.')
       setIsCheckoutLoading(false)
     }
