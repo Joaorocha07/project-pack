@@ -1,3 +1,5 @@
+import { BACKEND_URL } from './session';
+
 export type User = {
   id: string;
   name: string;
@@ -50,9 +52,9 @@ export type AdminUserMutationResponse = {
 };
 
 const USER_KEY = 'user';
+const TOKEN_KEY = 'pack_token';
 const REMEMBERED_EMAIL_KEY = 'pack_remembered_email';
 const REQUEST_TIMEOUT_MS = 45000;
-const API_BASE_URL = '/api';
 
 async function parseApiResponse(response: Response) {
   const text = await response.text();
@@ -109,7 +111,19 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 }
 
 export function getStoredToken() {
-  return null;
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 export function getStoredUser() {
@@ -148,18 +162,22 @@ export function saveRememberedEmail(email: string) {
 }
 
 export async function clearSession() {
+  const token = getStoredToken();
   localStorage.removeItem(USER_KEY);
+  clearToken();
 
-  try {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-  } catch {
-    // The local user state is already cleared; the server cookie will expire naturally if logout fails.
+  if (token) {
+    try {
+      await fetch(`${BACKEND_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }).catch(() => null);
+    } catch {
+      // Token will expire naturally.
+    }
   }
 }
 
@@ -173,6 +191,20 @@ export function isMemberRole(user?: Pick<User, 'role' | 'roleLabel'> | null) {
   return normalizedRole === 'user' || normalizedRole === 'afiliado' || normalizedRole === 'teste';
 }
 
+function authHeaders(extraHeaders?: Record<string, string>) {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...extraHeaders,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
 async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = 'Erro na requisicao') {
   const headers = new Headers(options.headers);
 
@@ -180,10 +212,15 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+  const token = getStoredToken();
+
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetchWithTimeout(`${BACKEND_URL}${path}`, {
     ...options,
     headers,
-    credentials: 'include',
   });
 
   const data = await parseApiResponse(response);
@@ -191,6 +228,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
   if (!response.ok) {
     if (response.status === 401) {
       localStorage.removeItem(USER_KEY);
+      clearToken();
     }
 
     throw new Error(getApiError(data, fallback));
@@ -200,16 +238,14 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
 }
 
 export async function login(email: string, password: string) {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
+  const response = await fetchWithTimeout(`${BACKEND_URL}/auth/login`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
 
   const data = (await parseApiResponse(response)) as Partial<LoginResponse> & {
+    token?: string;
     error?: string;
   };
 
@@ -219,6 +255,10 @@ export async function login(email: string, password: string) {
 
   if (!data.user) {
     throw new Error('A resposta do login veio incompleta. Tente novamente.');
+  }
+
+  if (data.token) {
+    saveToken(data.token);
   }
 
   saveSession(data.user);
@@ -251,17 +291,35 @@ export async function changePassword(currentPassword: string, newPassword: strin
 }
 
 export async function requestPasswordReset(email: string) {
-  return apiFetch<{ ok?: boolean; message?: string }>('/auth/password-reset/request', {
+  const response = await fetchWithTimeout(`${BACKEND_URL}/auth/password-reset/request`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
-  }, 'Nao foi possivel enviar o codigo. Confira o email e tente novamente.');
+  });
+
+  const data = await parseApiResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getApiError(data, 'Nao foi possivel enviar o codigo. Confira o email e tente novamente.'));
+  }
+
+  return data as { ok?: boolean; message?: string };
 }
 
 export async function confirmPasswordReset(email: string, code: string, newPassword: string) {
-  return apiFetch<{ ok?: boolean; message?: string }>('/auth/password-reset/confirm', {
+  const response = await fetchWithTimeout(`${BACKEND_URL}/auth/password-reset/confirm`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, code, newPassword }),
-  }, 'Nao foi possivel alterar a senha. Confira o codigo e tente novamente.');
+  });
+
+  const data = await parseApiResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getApiError(data, 'Nao foi possivel alterar a senha. Confira o codigo e tente novamente.'));
+  }
+
+  return data as { ok?: boolean; message?: string };
 }
 
 export async function listUsers() {
@@ -310,11 +368,9 @@ export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
 }
 
 export async function bootstrapAdmin(secret: string, name: string, email: string, password: string) {
-  const response = await fetchWithTimeout(`${API_BASE_URL}/admin/bootstrap-admin?secret=${encodeURIComponent(secret)}`, {
+  const response = await fetchWithTimeout(`${BACKEND_URL}/admin/bootstrap-admin?secret=${encodeURIComponent(secret)}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password }),
   });
 
@@ -325,4 +381,15 @@ export async function bootstrapAdmin(secret: string, name: string, email: string
   }
 
   return data;
+}
+
+export function backendFetch(path: string, options: RequestInit = {}) {
+  const headers = new Headers(options.headers);
+  const token = getStoredToken();
+
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return fetch(`${BACKEND_URL}${path}`, { ...options, headers });
 }

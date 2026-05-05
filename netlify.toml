@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
+  NEXT_PUBLIC_BACKEND_URL = "https://pack-do-criador-back-end-production.up.railway.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

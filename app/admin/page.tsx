@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { clearSession, getMe, importCaktoPurchases, isAdminRole, type ImportCaktoSummary, type User } from '@/lib/auth';
+import { backendFetch, clearSession, getMe, importCaktoPurchases, isAdminRole, type ImportCaktoSummary, type User } from '@/lib/auth';
 
 const emptySummary: ImportCaktoSummary = {
   totalOrdersRead: 0,
@@ -199,8 +199,7 @@ export default function AdminPage() {
   }
 
   async function loadStickerCategories() {
-    const response = await fetch('/api/admin/stickers/categories', {
-      credentials: 'include',
+    const response = await backendFetch('/admin/stickers/categories', {
       cache: 'no-store',
     });
     const data = (await response.json().catch(() => ({}))) as {
@@ -236,8 +235,7 @@ export default function AdminPage() {
     setIsLoadingStorageUsage(true);
 
     try {
-      const response = await fetch('/api/admin/stickers/storage-usage', {
-        credentials: 'include',
+      const response = await backendFetch('/admin/stickers/storage-usage', {
         cache: 'no-store',
       });
       const data = (await response.json().catch(() => ({}))) as {
@@ -252,16 +250,16 @@ export default function AdminPage() {
     }
   }
 
-  async function requestJson<T>(url: string, options: RequestInit = {}, fallback = 'Nao foi possivel concluir a acao.') {
+  async function requestJson<T>(path: string, options: RequestInit = {}, fallback = 'Nao foi possivel concluir a acao.') {
     const headers = new Headers(options.headers);
 
     if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
 
-    const response = await fetch(url, {
+    const url = path.startsWith('http') ? path : path.replace(/^\/api/, '');
+    const response = await backendFetch(url, {
       ...options,
-      credentials: 'include',
       headers,
     });
     const data = (await response.json().catch(() => ({}))) as T & { error?: string; message?: string };
@@ -283,7 +281,7 @@ export default function AdminPage() {
 
     try {
       const data = await requestJson<{ images?: StickerImage[] }>(
-        `/api/stickers/categories/${encodeURIComponent(categoryId)}/images?page=${page}&limit=${IMAGE_BATCH_SIZE}`,
+        `/stickers/categories/${encodeURIComponent(categoryId)}/images?page=${page}&limit=${IMAGE_BATCH_SIZE}`,
         { cache: 'no-store' },
         'Nao foi possivel carregar as figurinhas.'
       );
@@ -342,12 +340,9 @@ export default function AdminPage() {
     setIsCreatingCategory(true);
 
     try {
-      const response = await fetch('/api/admin/stickers/categories', {
+      const response = await backendFetch('/admin/stickers/categories', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: newCategoryTitle,
           description: newCategoryDescription,
@@ -366,10 +361,9 @@ export default function AdminPage() {
         const coverFormData = new FormData();
         coverFormData.append('files', newCategoryCover);
 
-        const uploadResponse = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(data.category.id)}/images`, {
+        const uploadResponse = await backendFetch(`/admin/stickers/categories/${encodeURIComponent(data.category.id)}/images`, {
           method: 'POST',
           body: coverFormData,
-          credentials: 'include',
         });
         const uploadData = (await uploadResponse.json().catch(() => ({}))) as {
           error?: string;
@@ -383,12 +377,9 @@ export default function AdminPage() {
         const coverImageId = uploadData.images?.[0]?.id;
 
         if (coverImageId) {
-          const coverResponse = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(data.category.id)}/cover`, {
+          const coverResponse = await backendFetch(`/admin/stickers/categories/${encodeURIComponent(data.category.id)}/cover`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageId: coverImageId }),
           });
           const coverData = (await coverResponse.json().catch(() => ({}))) as { error?: string };
@@ -481,10 +472,9 @@ export default function AdminPage() {
       formData.append('files', file, file.name);
     }
 
-    const response = await fetch(`/api/admin/stickers/categories/${encodeURIComponent(categoryId)}/images`, {
+    const response = await backendFetch(`/admin/stickers/categories/${encodeURIComponent(categoryId)}/images`, {
       method: 'POST',
       body: formData,
-      credentials: 'include',
     });
     const data = (await response.json().catch(() => ({}))) as {
       error?: string;
@@ -513,7 +503,7 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}`, {
+      await requestJson(`/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}`, {
         method: 'PATCH',
         body: JSON.stringify({
           title: editCategoryTitle,
@@ -543,7 +533,7 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}`, {
+      await requestJson(`/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}`, {
         method: 'DELETE',
       }, 'Nao foi possivel excluir a categoria.');
       setSuccess('Categoria excluida.');
@@ -567,7 +557,7 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}/cover`, {
+      await requestJson(`/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}/cover`, {
         method: 'PUT',
         body: JSON.stringify({ imageId }),
       }, 'Nao foi possivel definir a capa.');
@@ -590,7 +580,7 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-      await requestJson(`/api/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}/cover`, {
+      await requestJson(`/admin/stickers/categories/${encodeURIComponent(managedCategoryId)}/cover`, {
         method: 'DELETE',
       }, 'Nao foi possivel remover a capa.');
       setSuccess('Capa removida.');
@@ -615,7 +605,7 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-      await requestJson(`/api/admin/stickers/images/${encodeURIComponent(imageId)}`, {
+      await requestJson(`/admin/stickers/images/${encodeURIComponent(imageId)}`, {
         method: 'PATCH',
         body: JSON.stringify({ name }),
       }, 'Nao foi possivel renomear a figurinha.');
@@ -640,7 +630,7 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-      await requestJson(`/api/admin/stickers/images/${encodeURIComponent(image.id)}`, {
+      await requestJson(`/admin/stickers/images/${encodeURIComponent(image.id)}`, {
         method: 'DELETE',
       }, 'Nao foi possivel excluir a figurinha.');
       setSuccess('Figurinha excluida.');
@@ -1555,9 +1545,10 @@ function normalizeProtectedUrl(url?: string | null) {
     return null;
   }
 
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/api/')) {
+  if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
 
-  return url.startsWith('/') ? `/api${url}` : `/api/${url}`;
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'https://pack-do-criador-back-end-production.up.railway.app';
+  return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
 }

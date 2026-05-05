@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { clearSession, getMe, isAdminRole, isMemberRole, type User } from '@/lib/auth';
+import { backendFetch, clearSession, getMe, isAdminRole, isMemberRole, type User } from '@/lib/auth';
 import capaAcessorios from '@/images/capa-figurinhas/acessórios.webp';
 import capaAchadinhosShopee from '@/images/capa-figurinhas/ACHADINHOS-SHOPEE.webp';
 import capaBarbie from '@/images/capa-figurinhas/BARBIE.webp';
@@ -268,8 +268,7 @@ export default function AccessPage() {
 
         setUser(currentUser);
 
-        const stickersResponse = await fetch('/api/stickers/categories', {
-          credentials: 'include',
+        const stickersResponse = await backendFetch('/stickers/categories', {
           cache: 'no-store',
         });
         const stickersData = (await stickersResponse.json().catch(() => ({}))) as {
@@ -321,9 +320,7 @@ export default function AccessPage() {
     setLoadingMoreCategoryId(category.id);
 
     try {
-      const response = await fetch(`/api/stickers/categories/${encodeURIComponent(category.id)}/images?page=${page}&limit=${IMAGE_BATCH_SIZE}`, {
-        credentials: 'include',
-      });
+      const response = await backendFetch(`/stickers/categories/${encodeURIComponent(category.id)}/images?page=${page}&limit=${IMAGE_BATCH_SIZE}`);
       const data = (await response.json().catch(() => ({}))) as {
         images?: ProtectedStickerImage[];
         error?: string;
@@ -776,5 +773,6 @@ function normalizeProtectedUrl(url?: string | null) {
     return url;
   }
 
-  return url.startsWith('/') ? `/api${url}` : `/api/${url}`;
+  const base = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'https://pack-do-criador-back-end-production.up.railway.app';
+  return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
 }
