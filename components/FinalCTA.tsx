@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CreditCard, DownloadCloud, Loader2, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
+import { CreditCard, DownloadCloud, LockKeyhole, ShieldCheck, ShoppingCart } from 'lucide-react'
 
 export default function FinalCTA() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
