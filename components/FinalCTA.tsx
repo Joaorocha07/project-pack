@@ -23,7 +23,8 @@ export default function FinalCTA() {
     setCheckoutError('')
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/checkout/link`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://pack-do-criador-back-end-production.up.railway.app'
+      const response = await fetch(`${backendUrl}/checkout/link`, {
         cache: 'no-store',
       })
 
