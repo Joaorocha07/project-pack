@@ -367,6 +367,20 @@ export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
   }, 'Nao foi possivel importar compradores da Cakto.');
 }
 
+export async function getCheckoutLink() {
+  const response = await fetchWithTimeout(`${BACKEND_URL}/checkout/link`, {
+    cache: 'no-store',
+  });
+
+  const data = await parseApiResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getApiError(data, 'Nao foi possivel buscar o link de checkout.'));
+  }
+
+  return data as { url: string };
+}
+
 export async function bootstrapAdmin(secret: string, name: string, email: string, password: string) {
   const response = await fetchWithTimeout(`${BACKEND_URL}/admin/bootstrap-admin?secret=${encodeURIComponent(secret)}`, {
     method: 'POST',
