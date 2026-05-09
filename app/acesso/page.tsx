@@ -728,7 +728,7 @@ function normalizeCategory(category: ProtectedStickerCategory) {
     (category as ProtectedStickerCategory & { count?: number }).count ??
     0
   );
-  const token = typeof window !== 'undefined' ? localStorage.getItem('pack_token') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('pack_token') : null;
 
   function withToken(url: string | null) {
     if (!url || !token) return url;
@@ -747,7 +747,7 @@ function normalizeCategory(category: ProtectedStickerCategory) {
 function normalizeImage(image: ProtectedStickerImage) {
   const imageUrl = image.url ?? image.imageUrl ?? image.image_url ?? null;
   const downloadUrl = image.downloadUrl ?? image.download_url ?? imageUrl;
-  const token = typeof window !== 'undefined' ? localStorage.getItem('pack_token') : null;
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('pack_token') : null;
 
   function withToken(url: string | null) {
     if (!url || !token) return url;

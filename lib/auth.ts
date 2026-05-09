@@ -112,22 +112,22 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 
 export function getStoredToken() {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    return sessionStorage.getItem(TOKEN_KEY);
   } catch {
     return null;
   }
 }
 
 function saveToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(TOKEN_KEY, token);
 }
 
 function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
 }
 
 export function getStoredUser() {
-  const storedUser = localStorage.getItem(USER_KEY);
+  const storedUser = sessionStorage.getItem(USER_KEY);
 
   if (!storedUser) {
     return null;
@@ -136,17 +136,17 @@ export function getStoredUser() {
   try {
     return JSON.parse(storedUser) as User;
   } catch {
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
     return null;
   }
 }
 
 export function saveSession(user: User) {
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 export function saveUser(user: User) {
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 export function getRememberedEmail() {
@@ -163,7 +163,7 @@ export function saveRememberedEmail(email: string) {
 
 export async function clearSession() {
   const token = getStoredToken();
-  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(USER_KEY);
   clearToken();
 
   if (token) {
@@ -227,7 +227,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, fallback = '
 
   if (!response.ok) {
     if (response.status === 401) {
-      localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(USER_KEY);
       clearToken();
     }
 
@@ -365,6 +365,20 @@ export async function importCaktoPurchases(sendEmail = false, maxPages = 20) {
     method: 'POST',
     body: JSON.stringify({ sendEmail, maxPages }),
   }, 'Nao foi possivel importar compradores da Cakto.');
+}
+
+export async function getCheckoutLink() {
+  const response = await fetchWithTimeout(`${BACKEND_URL}/checkout/link`, {
+    cache: 'no-store',
+  });
+
+  const data = await parseApiResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getApiError(data, 'Nao foi possivel buscar o link de checkout.'));
+  }
+
+  return data as { url: string };
 }
 
 export async function bootstrapAdmin(secret: string, name: string, email: string, password: string) {

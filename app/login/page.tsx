@@ -42,34 +42,7 @@ export default function LoginPage() {
       setEmail(rememberedEmail);
       setResetEmail(rememberedEmail);
     }
-
-    let isMounted = true;
-
-    async function redirectAuthenticatedUser() {
-      try {
-        const user = await getMe();
-
-        if (!isMounted) {
-          return;
-        }
-
-        if (user.temporaryPassword) {
-          router.replace('/trocar-senha');
-          return;
-        }
-
-        router.replace(isAdminRole(user.role) ? '/admin' : '/acesso');
-      } catch {
-        // No active session; stay on the login page.
-      }
-    }
-
-    redirectAuthenticatedUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [router]);
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
