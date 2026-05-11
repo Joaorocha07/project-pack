@@ -58,13 +58,13 @@ export default function Hero({ onCtaClick }: HeroProps) {
               <ShoppingCart className="h-5 w-5" />
               Quero minhas figurinhas
             </button>
-            <a
+            {/* <a
               href="/login"
               className="inline-flex items-center justify-center gap-3 rounded-full border border-white/20 bg-white/[0.04] px-8 py-4 text-base font-semibold text-[#F8F8F8] transition duration-300 ease-out hover:scale-[1.02] hover:border-[#F8F8F8]/70 hover:bg-[#F8F8F8]/10"
             >
               <LockKeyhole className="h-5 w-5 text-[#F8F8F8]" />
               Entrar na área de membros
-            </a>
+            </a> */}
           </div>
 
           <div className="mt-10 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
